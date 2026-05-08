@@ -1,0 +1,13 @@
+node_modules
+.DS_Store
+*.local
+.env
+
+# VitePress
+docs/.vitepress/cache
+docs/.vitepress/dist
+
+# IDE
+.vscode/
+.idea/
+*.swp

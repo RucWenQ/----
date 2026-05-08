@@ -1,0 +1,293 @@
+/**
+ * 速通简明教程 · 自定义样式
+ * 
+ * 设计语言：学术稿纸感 / 米黄底 + 朱砂红主色 / 砚墨链接
+ * 字体：标题 Fraunces (英) + Noto Serif SC (中)
+ *      正文 Geist (英) + Noto Sans SC (中)
+ *      代码 JetBrains Mono
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400&family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap");
+
+/* ============================================================
+   1. 覆盖 VitePress 设计令牌
+   ============================================================ */
+:root {
+  /* 品牌色：朱砂红 */
+  --vp-c-brand-1: #a6321f;
+  --vp-c-brand-2: #b94a35;
+  --vp-c-brand-3: #c9695a;
+  --vp-c-brand-soft: rgba(166, 50, 31, 0.1);
+
+  /* 链接（砚墨色） */
+  --vp-c-text-1: #1f1b16;
+  --vp-c-text-2: #4a4339;
+  --vp-c-text-3: #87796a;
+
+  /* 背景：米黄稿纸 */
+  --vp-c-bg: #f7f3ea;
+  --vp-c-bg-alt: #fbf8f1;
+  --vp-c-bg-elv: #fbf8f1;
+  --vp-c-bg-soft: #f1ebdd;
+
+  /* 边框 */
+  --vp-c-border: #ddd2bc;
+  --vp-c-divider: #eae2cd;
+  --vp-c-gutter: #eae2cd;
+
+  /* 字体 */
+  --vp-font-family-base:
+    "Geist", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --vp-font-family-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* 自定义令牌（供组件使用） */
+  --tutorial-accent: #a6321f;
+  --tutorial-ink-soft: #4a4339;
+  --tutorial-link: #6a4f1b;
+  --tutorial-highlight: #faedb6;
+  --tutorial-rule: #ddd2bc;
+
+  /* Callout */
+  --vp-custom-block-tip-border: #407c19;
+  --vp-custom-block-tip-text: #6ce918;
+  --vp-custom-block-tip-bg: rgba(79, 110, 58, 0.08);
+
+  --vp-custom-block-warning-border: #9b5a1b;
+  --vp-custom-block-warning-text: #e47c1a;
+  --vp-custom-block-warning-bg: rgba(155, 90, 27, 0.08);
+
+  --vp-custom-block-danger-border: #a6321f;
+  --vp-custom-block-danger-text: #e63010;
+  --vp-custom-block-danger-bg: rgba(166, 50, 31, 0.08);
+
+  --vp-custom-block-info-border: #6a4f1b;
+  --vp-custom-block-info-text: #d69c1e;
+  --vp-custom-block-info-bg: rgba(106, 79, 27, 0.06);
+}
+
+/* 全局字号缩放（VitePress 默认 16px → 17px） */
+html {
+  font-size: 17px;
+}
+
+/* 暗色模式：保留学术气质，但提高对比度 */
+.dark {
+  --vp-c-brand-1: #d17a6a;
+  --vp-c-brand-2: #c9695a;
+  --vp-c-brand-3: #a6321f;
+
+  --vp-c-bg: #1a1714;
+  --vp-c-bg-alt: #1f1b17;
+  --vp-c-bg-elv: #221e19;
+  --vp-c-bg-soft: #2a2520;
+
+  --vp-c-text-1: #f3eedd;
+  --vp-c-text-2: #c9bfa9;
+  --vp-c-text-3: #afa38c;
+
+  --vp-c-border: #3a332a;
+  --vp-c-divider: #2f2a23;
+
+  --tutorial-accent: #d17a6a;
+  --tutorial-ink-soft: #c9bfa9;
+  --tutorial-link: #d4ad7a;
+  --tutorial-highlight: rgba(250, 237, 182, 0.15);
+  --tutorial-rule: #3a332a;
+}
+
+/* ============================================================
+   2. 颗粒纸感背景
+   ============================================================ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: multiply;
+}
+
+.dark body::before {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.015) 1px,
+    transparent 1px
+  );
+  mix-blend-mode: screen;
+}
+
+/* ============================================================
+   3. 排版增强
+   ============================================================ */
+
+/* 标题用衬线字体（学术气质） */
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.VPHero .name,
+.VPHero .text {
+  font-family: "Fraunces", "Noto Serif SC", "Songti SC", serif;
+  letter-spacing: -0.01em;
+}
+
+.vp-doc h1 {
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.15;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.vp-doc h2 {
+  font-size: 28px;
+  font-weight: 500;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 32px;
+}
+
+/* 正文行高 + 中文易读性 */
+.vp-doc p {
+  line-height: 1.8;
+  margin: 14px 0;
+}
+
+/* 重点关键词高亮 */
+.vp-doc .kw {
+  background: linear-gradient(transparent 60%, var(--tutorial-highlight) 60%);
+  padding: 0 2px;
+}
+
+/* 行内代码 */
+.vp-doc :not(pre) > code {
+  font-size: 12.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  color: var(--tutorial-accent);
+}
+
+/* 引用块 */
+.vp-doc blockquote {
+  border-left: 3px solid var(--tutorial-accent);
+  background: var(--vp-c-bg-alt);
+  padding: 14px 18px;
+  margin: 20px 0;
+  font-style: italic;
+  color: var(--tutorial-ink-soft);
+}
+
+/* 表格 */
+.vp-doc table {
+  font-size: 15px;
+}
+.vp-doc th {
+  font-family: "Fraunces", "Noto Serif SC", serif;
+  font-style: italic;
+  font-weight: 500;
+  background: var(--vp-c-bg-alt);
+}
+
+/* 数学公式（KaTeX/MathJax） */
+.vp-doc mjx-container {
+  margin: 8px 0;
+}
+
+/* ============================================================
+   4. 顶部 Nav / 侧边栏微调
+   ============================================================ */
+.VPNavBarTitle .title {
+  font-family: "Fraunces", "Noto Serif SC", serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.VPSidebarItem.level-0 > .item > .text {
+  font-family: "Fraunces", "Noto Serif SC", serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--tutorial-accent) !important;
+}
+
+/* ============================================================
+   5. 章节封面（可在 .md 中通过 <ChapterCover> 调用）
+   ============================================================ */
+.chap-cover {
+  border-top: 2px solid var(--tutorial-accent);
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding: 36px 0 28px;
+  margin: 64px 0 32px;
+}
+
+.chap-cover .meta {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--tutorial-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.chap-cover h2 {
+  font-family: "Fraunces", "Noto Serif SC", serif;
+  font-size: 40px;
+  font-weight: 500;
+  margin: 0 0 8px;
+  border: none;
+  padding: 0;
+}
+
+.chap-cover .quote {
+  color: var(--vp-c-text-3);
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 17px;
+  margin-top: 12px;
+}
+
+/* ============================================================
+   6. Hero 首页
+   ============================================================ */
+.VPHero .name,
+.VPHero .text {
+  font-weight: 500;
+}
+.VPHero .name {
+  background: linear-gradient(120deg, var(--tutorial-accent) 0%, #6a4f1b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   7. Outline / 右侧目录
+   ============================================================ */
+.VPDocAsideOutline .outline-title {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* ============================================================
+   8. 响应式微调
+   ============================================================ */
+@media (max-width: 640px) {
+  .vp-doc h1 {
+    font-size: 32px;
+  }
+  .vp-doc h2 {
+    font-size: 23px;
+  }
+  .chap-cover h2 {
+    font-size: 30px;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "zju-psyc-tutorial",
+  "version": "0.1.0",
+  "private": true,
+  "description": "速通简明教程 · 社会心理学科研入门手册",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.0",
+    "vue": "^3.5.0",
+    "markdown-it-mathjax3": "^4.3.2"
+  }
+}

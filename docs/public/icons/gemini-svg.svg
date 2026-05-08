@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <defs>
+    </defs>
+
+  <rect width="100" height="100" rx="22" ry="22" fill="#1f1b16" />
+  
+  <text 
+    x="50" 
+    y="52" 
+    font-family="'SimSun', 'STSong', 'PMingLiU', 'Noto Serif TC', serif" 
+    font-size="64" 
+    font-weight="normal"
+    fill="#a6321f" 
+    text-anchor="middle" 
+    dominant-baseline="central"
+  >書</text>
+</svg>
