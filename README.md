@@ -52,7 +52,7 @@ zju-psyc-tutorial/
 详细规范见 `CONTRIBUTING.md`。要点：
 
 1. 文件命名：`kebab-case.md`，例如 `effect-size.md`
-2. 每个 `.md` 文件顶部必须有 frontmatter（标题、更新时间）
+2. 每个 `.md` 文件顶部必须有 frontmatter（标题、页面描述）
 3. 新增小节后到 `docs/.vitepress/sidebar.mts` 加一行
 4. 图片放 `docs/public/images/chapters/{章节文件夹名}/`，引用用绝对路径 `/images/chapters/.../xxx.png`
 

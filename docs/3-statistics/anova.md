@@ -122,7 +122,7 @@ $$
 | **协方差分析 (ANCOVA)** | 1+ 个分类 IV + 1+ 连续协变量 | 1 个连续 DV           | 控制基线焦虑后的干预效果    |
 | **MANOVA**              | 1+ 个分类 IV                 | **多个**连续 DV       | 见 [3.2.3](./manova)        |
 
-本节讲前 3 类 + ANCOVA。重复测量与混合 ANOVA 在多层模型框架下处理更灵活，会在 [3.6](./mixed-effects) 顺带覆盖。
+本节讲前 3 类 + ANCOVA。重复测量与混合 ANOVA 在多层模型框架下处理更灵活，会在 [3.6](./multilevel) 顺带覆盖。
 
 ## 四、用之前要满足什么条件
 
@@ -352,7 +352,7 @@ Steele & Aronson (1995) 的刻板印象威胁效应：
 上图的两条线明显不平行——威胁条件下女男差 13 分，无威胁条件下只差 3 分。这就是 _F_(1, 96) = 6.78, _p_ = .011 这个交互效应在视觉上长什么样。
 
 ::: details 想自己复现这张图？
-完整脚本：[generate_anova_plots.py](/code/generate_anova_plots.py)。改改 `female_means`、`male_means` 这几个数组就能用在你自己的数据上，同时会生成 profile plot 和 bar chart 两版。
+完整脚本：<a href="/code/generate_anova_plots.py" download>下载 generate_anova_plots.py</a>。改改 `female_means`、`male_means` 这几个数组就能用在你自己的数据上，同时会生成 profile plot 和 bar chart 两版。
 :::
 
 ### 6. 简单效应分析
@@ -421,7 +421,7 @@ Lord (1967) 提出的悖论：两组**自然形成**（不是随机分配）的�
 
 **语法**：
 
-```spss
+```text
 ONEWAY creativity BY emotion
   /STATISTICS DESCRIPTIVES HOMOGENEITY WELCH
   /POSTHOC = TUKEY GH ALPHA(0.05).
@@ -437,7 +437,7 @@ ONEWAY creativity BY emotion
 
 **语法**：
 
-```spss
+```text
 UNIANOVA math_score BY threat gender
   /METHOD=SSTYPE(3)
   /POSTHOC = threat gender (TUKEY)
@@ -452,7 +452,7 @@ UNIANOVA math_score BY threat gender
 
 ### 3. ANCOVA
 
-```spss
+```text
 UNIANOVA posttest BY group WITH pretest
   /METHOD=SSTYPE(3)
   /EMMEANS=TABLES(group) WITH(pretest=MEAN) COMPARE ADJ(BONFERRONI)
@@ -464,7 +464,7 @@ UNIANOVA posttest BY group WITH pretest
 
 ### 4. 检验 ANCOVA 的同质斜率假设
 
-```spss
+```text
 UNIANOVA posttest BY group WITH pretest
   /DESIGN=group pretest group*pretest.
 ```
@@ -610,7 +610,7 @@ sns.pointplot(data=df, x='threat', y='math_score', hue='gender',
 | 二分类 DV                   | Logistic 回归 / 卡方                        |
 | 严重偏态 + 小样本           | Kruskal-Wallis（非参 ANOVA）                |
 | 重复测量                    | 重复测量 ANOVA / 多层模型                   |
-| 嵌套 / 多层数据             | 多层线性模型（[3.6](./mixed-effects)）      |
+| 嵌套 / 多层数据             | 多层线性模型（[3.6](./multilevel)）         |
 | 多个连续 DV 同时考察        | MANOVA（[3.2.3](./manova)）                 |
 | 协变量与 DV 关系非线性      | 用回归 + 多项式项 / GAM                     |
 | 因子水平有顺序（如剂量）    | 趋势分析（线性、二次对比）                  |

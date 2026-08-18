@@ -337,7 +337,7 @@ pg.ttest(inc, exc)
 | 二分类 DV                      | 卡方检验（[3.3](./chi-square)）/ Logistic 回归 |
 | 严重偏态 + 小样本              | Mann-Whitney U                                 |
 | 想检验"两组相等"而非"两组不同" | 等价性检验（TOST）                             |
-| 嵌套 / 多层数据                | 多层线性模型（[3.6](./mixed-effects)）         |
+| 嵌套 / 多层数据                | 多层线性模型（[3.6](./multilevel)）            |
 | 想同时分析多个 DV              | MANOVA（[3.2.3](./manova)）                    |
 
 ## 资源与工具

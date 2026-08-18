@@ -14,7 +14,7 @@ hero:
       link: /1-tools/
     - theme: alt
       text: 论文写作
-      link: /6-topic/
+      link: /7-writing/
 
 features:
   - icon: 🌱

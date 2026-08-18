@@ -109,7 +109,7 @@ MANOVA 输出会同时给四个统计量。它们换汤不换药——都在衡�
 
 **语法**：
 
-```spss
+```text
 GLM anxiety depression stress BY treatment
   /METHOD=SSTYPE(3)
   /POSTHOC=treatment(TUKEY)

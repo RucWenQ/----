@@ -289,7 +289,7 @@ $$
 
 **语法**：
 
-```spss
+```text
 CROSSTABS
   /TABLES=bystander BY help
   /STATISTICS=CHISQ PHI
@@ -305,7 +305,7 @@ CROSSTABS
 
 **语法**（验证性别比 1:1）：
 
-```spss
+```text
 NPAR TESTS
   /CHISQUARE=gender
   /EXPECTED=EQUAL
@@ -318,7 +318,7 @@ NPAR TESTS
 
 2×2 表期望频次 < 5 时，SPSS 会**自动**在输出里给 Fisher's exact test 的结果——不用单独操作，直接看就行。更大表格用：
 
-```spss
+```text
 CROSSTABS
   /TABLES=var1 BY var2
   /STATISTICS=CHISQ

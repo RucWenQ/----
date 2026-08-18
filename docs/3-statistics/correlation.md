@@ -131,7 +131,7 @@ Cohen 的标尺是 1988 年基于行为科学普遍水平制定的。**社心方
 
 ### Pearson r 的核心假设
 
-1. **观测独立**——同一个人不能在数据集里出现多次。同班同学这种数据建议先看 [3.6](./mixed-effects)。
+1. **观测独立**——同一个人不能在数据集里出现多次。同班同学这种数据建议先看 [3.6](./multilevel)。
 2. **线性关系**——Pearson *r* 只检测**直线**关系。U 型、S 型、阈值型关系它会漏掉（见下一节 Anscombe 警示）。
 3. **两个变量近似双变量正态**——大样本下不太致命，小样本（n < 30）需要正态性。
 4. **没有严重异常值**——Pearson *r* 对异常值极其敏感，一两个极端点就能把 *r* 从 .60 拉到 .20。
@@ -266,7 +266,7 @@ $$
 
 **语法**：
 
-```spss
+```text
 CORRELATIONS
   /VARIABLES=self_esteem life_satisfaction stress
   /PRINT=TWOTAIL NOSIG FULL
@@ -277,7 +277,7 @@ CORRELATIONS
 
 ### 2. Spearman / Kendall
 
-```spss
+```text
 NONPAR CORR
   /VARIABLES=education income
   /PRINT=SPEARMAN TWOTAIL NOSIG.
@@ -291,7 +291,7 @@ Kendall 把 `SPEARMAN` 改成 `KENDALL`。
 
 把要分析的两个变量放 Variables，控制变量放 Controlling for。
 
-```spss
+```text
 PARTIAL CORR
   /VARIABLES=ice_cream drowning BY temperature
   /SIGNIFICANCE=TWOTAIL.
