@@ -1,0 +1,7 @@
+interface:
+  display_name: "心理学研究问题打磨"
+  short_description: "把心理学研究想法推进为可检验的研究蓝图"
+  default_prompt: "Use $psych-idea-refiner to help me turn this psychology research idea into an evidence-aware, testable study specification."
+
+policy:
+  allow_implicit_invocation: true

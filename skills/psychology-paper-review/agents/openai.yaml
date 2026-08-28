@@ -1,0 +1,7 @@
+interface:
+  display_name: "心理学论文精读"
+  short_description: "生成可追溯、可归档的心理学论文中文评述"
+  default_prompt: "Use $psychology-paper-review to review this psychology paper with page-level evidence and a structured archive record."
+
+policy:
+  allow_implicit_invocation: true

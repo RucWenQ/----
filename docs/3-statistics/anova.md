@@ -1,654 +1,242 @@
 ---
 title: 3.2.2 方差分析（ANOVA）
-description: 从"多次 t 检验为什么不行"讲到方差分解、事后比较、交互效应、协方差分析，含 SPSS 与 Python 实现
+description: 从研究问题选择单因素、双因素、重复测量或协方差分析，并用同一份数据完成检验、事后比较和报告
 ---
 
 # 3.2.2 方差分析（ANOVA）
 
 ::: tip 本节目标
 
-- 弄懂 ANOVA 和 t-test 的差异和适用场景。
-- 区分**主效应**与**交互效应**，并知道一张 profile plot 该怎么读。
-- 在显著之后选对**事后比较**方法（Tukey / Bonferroni / Scheffé / Games-Howell / Dunnett 各自适合什么场景）。
-- 会用并知道**何时不要用** ANCOVA。
-- 在 SPSS 和 Python 中跑出单因素、双因素、协方差三种 ANOVA，并写出符合 APA 7 的报告。
+读完后，你能根据变量和观测结构选择 ANOVA 的形态，运行一个最小的单因素分析，知道显著的 F 检验还缺什么，并在交互或协变量情形下避免过度解释。
 
 :::
 
-<OutlineCard title="本节路线图">
+<OutlineCard title="先走最短路径">
 
-- 为什么需要 ANOVA：多次 t 检验的局限
-- 核心原理：方差的分解
-- ANOVA 的几种形态（一图读完）
-- 用之前要满足什么条件
-- 单因素 ANOVA 完整例子：情绪 × 创造力
-- 事后比较：显著之后做什么
-- 效应量：η²、partial η²、ω²
-- 双因素 ANOVA：交互效应才是关键
-- 协方差分析（ANCOVA）：目的与陷阱
-- SPSS / Python 实现
-- 常见错误与替代方案
+- 先问研究问题：比较几组均值，还是问一个因素的效应是否随另一个因素改变？
+- 再核对观测结构：每行是否是独立被试，还是同一被试有多次测量？
+- 选择模型并检查残差、离群点和组间样本量；不要把某个样本量数字当成自动通行证。
+- 先读总体检验，再按预先计划的对比或合适的事后方法定位差异。
+- 报告均值和不确定性、F（或 Welch F）、效应量、对比校正和设计边界。
 
 </OutlineCard>
 
-## 一、为什么需要 ANOVA：从一个困境说起
+## 一、ANOVA 回答什么问题
 
-回想 [3.2.1](./t-test) 独立样本 t 检验，它一次只能比较两组。如果有**三组**怎么办？很多人的第一反应是"做三次 t 检验呗"——A vs B、A vs C、B vs C。
-
-这就是经典陷阱——每做一次 t 检验，你都允许自己有 5% 的概率犯 I 类错误。**做三次比较，至少出现一次假阳性的概率不再是 5%**：
+**单因素 ANOVA**检验多个独立组的总体均值是否相同：
 
 $$
-P(\text{至少一次假阳性}) = 1 - (1 - 0.05)^3 \approx 14\%
+H_0: \mu_1=\mu_2=\cdots=\mu_k
 $$
 
-四组就要做 $\binom{4}{2} = 6$ 次比较，假阳性概率提升到 $1 - 0.95^6 \approx 26\%$。<span class="kw">你以为自己在严格控制 5%，其实早已不符合预先确定的统计功效。</span>
-
-ANOVA 的解决思路很巧妙：**不再问"A 和 B 是否不同"这种两两问题，而是先问一个总的问题——"这几组里，是不是至少有一组跟别人不一样？"** 这个总问题用一次 F 检验回答，I 类错误率严格控制在 5%。如果总检验显著，再做事后比较确定具体是哪几组之间的差异（且事后比较会对多重比较做校正）。
-
-## 二、ANOVA 的核心原理：方差的分解
-
-### 1. 信号与噪声
-
-ANOVA 的 F 值和 t 检验的 t 值在假设检验的原理上相同——都是**信噪比**：
+备择假设是“至少一个均值不同”，并不保证所有组两两不同。F 统计量把组间均方与组内均方相比：
 
 $$
-F = \frac{\text{组间方差（信号）}}{\text{组内方差（噪声）}} = \frac{MS_{\text{between}}}{MS_{\text{within}}}
+F=\frac{MS_{\text{between}}}{MS_{\text{within}}},\qquad df_1=k-1,\quad df_2=N-k
 $$
 
-- **分子（组间方差）**：各组**均值**离总均值有多远——如果各组真的不同，这个值会大。
-- **分母（组内方差）**：每组**内部**个体围绕自己的组均值散得多开——这是"随机波动的基线"。
-- F 值大 → 组间差异远大于组内噪声 → 拒绝"所有组均值相等"。
-- F 值接近 1 → 组间差异跟组内噪声差不多 → 不能拒绝零假设。
+当只有两个独立组时，经典等方差 ANOVA 与 Student t 检验满足 $F=t^2$；这不表示 Welch t 和等方差 ANOVA 在方差不齐时也完全相同。ANOVA 只描述组均值的差异，不能单凭显著性证明操纵造成了差异；因果措辞还需要随机分配、操纵执行和缺失处理等设计条件。
 
-::: tip 一个生活化的对比
-你想知道"用功程度"是否影响考试成绩，把学生分成"很用功""一般""不用功"三组：
+## 二、先按数据结构选模型
 
-- 如果三组**内部**成绩波动很小（很用功的都 90+，不用功的都 60-），三组**之间**均值又差很多 → F 大，差异显著。
-- 如果三组**内部**就上下飘 30 分（每组都有学霸学渣），三组**之间**均值差 5 分 → F 小，差异可能只是抽样运气。
-  :::
+| 你的问题与数据 | 常用模型 | 先检查什么 | 不要直接做什么 |
+| --- | --- | --- | --- |
+| 一个分类因素，三个或更多被试间水平；一个连续结果 | 单因素 ANOVA；方差不齐可用 Welch ANOVA | 每行是否为一名独立被试 | 把同一被试的多次测量当成独立行 |
+| 两个分类因素，一个连续结果 | 双因素 ANOVA（含交互） | 每个因素组合是否有足够观测、是否有空 cell | 只看两个主效应而跳过交互 |
+| 同一被试在三个或更多条件/时间点测量 | 重复测量 ANOVA 或混合效应模型 | 被试内相关、球形性（传统 RM-ANOVA） | 用独立组 ANOVA 假装独立 |
+| 一个被试间因素 + 一个被试内因素 | 混合 ANOVA 或混合效应模型 | 两种相关结构和缺失模式 | 把所有观测当作同一层次 |
+| 比较组均值，同时控制操纵前连续变量 | ANCOVA | 线性关系、回归斜率同质、协变量确在处理前 | 用后处理变量“控制”处理效应 |
+| 多个相关连续结果的整体差异 | MANOVA（见 [3.2.3](./manova)） | 结果间相关和协方差矩阵 | 对每个结果反复检验而不处理多重性 |
 
-### 2. 方差分解（Sum of Squares）
+如果结果是二分类、计数或明显有序等级，先到 [变量与方法对照表](./foundations#method-lookup) 判断是否应使用广义线性模型或有序模型；ANOVA 的连续结果假设不能靠改写变量名解决。
 
-ANOVA 把全部数据的总变异拆成两块：
+## 三、假设与诊断：不要用一个阈值代替判断
 
-$$
-\underbrace{SS_{\text{total}}}_{\text{所有数据离总均值有多散}} = \underbrace{SS_{\text{between}}}_{\text{组间差异}} + \underbrace{SS_{\text{within}}}_{\text{组内差异}}
-$$
+1. **独立性来自研究设计**：同一班级、同一家庭或同一被试的观测可能相关。画图或做 Levene 检验不能修复独立性问题；需要多层/混合模型（见 [3.6](./multilevel)）或明确的聚类处理。
+2. **模型残差近似正态**：不是要求原始分数“必须正态”。在样本量、平衡性和离群点都合理时，F 检验对中等偏离可能不敏感；小而不平衡的组、重尾分布或强离群点时应做敏感性分析或改用稳健模型。不存在普遍适用的“每组至少 20/30 人”门槛。
+3. **方差齐性是经典 ANOVA 的条件**：查看组内 SD、残差图和 Levene/Brown–Forsythe 等诊断。方差不齐且样本量不平衡时，优先考虑 Welch ANOVA；它只改变总体检验，不会自动给出合适的事后比较。
+4. **缺失与离群点要可追溯**：先核对录入和预先定义的排除规则，再报告排除数量。不能为了让 F 显著而事后删除一个点。
 
-具体公式（设有 $k$ 组，每组 $n_j$ 人，第 $j$ 组的均值是 $\bar{X}_j$，总均值是 $\bar{\bar{X}}$）：
+### Welch、Student 与事后比较怎么选
 
-$$
-SS_{\text{between}} = \sum_{j=1}^{k} n_j (\bar{X}_j - \bar{\bar{X}})^2
-$$
+- 方差和样本量大致平衡、残差没有明显问题：经典 ANOVA + Tukey HSD 是一个可解释的起点。
+- 方差明显不同或组大小很不平衡：总体检验用 Welch ANOVA；两两比较可用 Games–Howell，并报告调整后的 p 值和均值差置信区间。
+- 只关心每个处理组与一个对照：预先计划的 Dunnett 对比通常比做全部两两比较更有针对性。
+- 只有少数预先声明的线性对比：直接报告对比估计和相应的校正；不要把“总体 F 显著”当作所有计划对比的前置门槛。
+- Bonferroni/Sidak 可以控制一组预先定义比较的 FWER，但比较很多时会降低功效；探索性的一组结果若改用 FDR，应明确它控制的不是同一个错误率。
 
-$$
-SS_{\text{within}} = \sum_{j=1}^{k} \sum_{i=1}^{n_j} (X_{ij} - \bar{X}_j)^2
-$$
+“三次 t 检验有 14% 假阳性”只在检验独立时才由 $1-(1-.05)^3$ 得到；成对比较通常相关，因此这个数字不是普遍精确值。核心问题是多重性，解决办法是总体 F 检验、计划对比或明确的多重校正。
 
-均方（mean square）= 平方和 / 自由度：
+## 四、单因素示例：情绪启动与创造力
 
-| 来源 | SS                    | df      | MS             |
-| ---- | --------------------- | ------- | -------------- |
-| 组间 | $SS_{\text{between}}$ | $k - 1$ | $SS_b / (k-1)$ |
-| 组内 | $SS_{\text{within}}$  | $N - k$ | $SS_w / (N-k)$ |
-| 总和 | $SS_{\text{total}}$   | $N - 1$ | —              |
+下面是一个**教学模拟**：三种情绪启动条件，每组 30 人，DV 是 0–10 分的创造力测验。代码固定随机种子，并从同一张长表完成总体检验、Tukey 比较和效应量计算；实际研究应替换为自己的数据并保存版本。
 
-最终：
-
-$$
-F = \frac{MS_{\text{between}}}{MS_{\text{within}}}, \quad \text{自由度} = (k-1, N-k)
-$$
-
-### 3. F 与 t 的关系
-
-::: details 一个值得知道的小事实
-当只有两组时（k = 2），ANOVA 和独立样本 t 检验**在数学上等价**：
-
-$$
-F = t^2
-$$
-
-例如 t = 2.50, df = 58 → F = 6.25, df = (1, 58)，p 值完全相同。这也解释了为什么 ANOVA 输出里用 F 不用 t——它是一个能扩展到任意组数的统一框架。
-:::
-
-## 三、ANOVA 的几种形态
-
-| 名称                    | 自变量结构                   | 因变量结构            | 典型例子                    |
-| ----------------------- | ---------------------------- | --------------------- | --------------------------- |
-| **单因素 ANOVA**        | 1 个分类 IV（≥3 水平）       | 1 个连续 DV（被试间） | 三种情绪启动 → 创造力       |
-| **双因素 ANOVA**        | 2 个分类 IV                  | 1 个连续 DV（被试间） | 性别 × 威胁条件 → 数学成绩  |
-| **重复测量 ANOVA**      | 1 个 IV（被试内重复）        | 1 个连续 DV           | 同一批人在 3 个时间点的焦虑 |
-| **混合 ANOVA**          | 1 个被试间 + 1 个被试内      | 1 个连续 DV           | 治疗组 × 时间点 → 抑郁分    |
-| **协方差分析 (ANCOVA)** | 1+ 个分类 IV + 1+ 连续协变量 | 1 个连续 DV           | 控制基线焦虑后的干预效果    |
-| **MANOVA**              | 1+ 个分类 IV                 | **多个**连续 DV       | 见 [3.2.3](./manova)        |
-
-本节讲前 3 类 + ANCOVA。重复测量与混合 ANOVA 在多层模型框架下处理更灵活，会在 [3.6](./multilevel) 顺带覆盖。
-
-## 四、用之前要满足什么条件
-
-### 1. 三个核心假设
-
-- **观测独立**：和 t 检验一致。同班同学、同对夫妻这种数据不能直接做 ANOVA。
-- **每个组内 DV 近似正态**：n ≥ 30 时由中心极限定理保护，问题不大。
-- **方差齐性**（homogeneity of variance）：各组方差大致相等。Levene's test 可检验，但与 t 检验同理——**现代推荐直接用 Welch's ANOVA**（SPSS 和 Python 都支持），方差不齐时不必先做 Levene's。
-
-### 2. 一些容易忽略的实操要求
-
-- **每组至少 ~20–30 人**：太小的组让方差估计很不稳定。
-- **大致平衡的样本量**：极不平衡（比如 5 vs 100 vs 50）时 SS 类型的选择就开始有讲究了（见下一节）。
-- **没有极端异常值**：F 比 t 还更敏感——一个异常值能让某组方差膨胀，把整张表的 F 都拉小。
-
-### 3. SS 类型（Type I / II / III）：因素不平衡时绕不开的概念
-
-::: details 什么是 Type III SS，为什么 SPSS 默认用它
-当各因素水平**样本量不等**时，"某个因素的 SS"就有歧义——它是否要扣除其他因素的影响？
-
-- **Type I**（顺序型）：按你输入因素的顺序逐个扣除。结果**依赖于因素顺序**，几乎从不用于解释性分析。
-- **Type II**：扣除其他主效应，但**不**扣除包含它的交互效应。无交互时较有功效。
-- **Type III**（**SPSS 默认**）：扣除所有其他效应（含交互）。社心方向论文里如果不特别说明，<span class="kw">报的就是 Type III SS</span>。
-
-完美平衡设计下三种 SS 给出相同结果。不平衡时优先用 Type III（更保守），并在论文里说明。R 里默认是 Type I，要主动指定 `car::Anova(model, type=3)`，且需要先设置 `options(contrasts = c("contr.sum", "contr.poly"))`。
-:::
-
-## 五、单因素 ANOVA：一个完整例子
-
-### 1. 研究背景
-
-社心方向有个经典假设：**积极情绪扩展认知范围、提升创造力**（Fredrickson 的 broaden-and-build 理论）。我们设计一个简单实验来检验：
-
-- **IV**（被试间）：情绪启动条件，3 水平
-  - 积极情绪（看搞笑视频）
-  - 中性情绪（看说明书）
-  - 消极情绪（看悲伤视频）
-- **DV**：创造力分数（远距离联想测验 RAT，0–10 分）
-
-### 2. 假设虚拟数据
-
-| 组别 | n   | M    | SD   |
-| ---- | --- | ---- | ---- |
-| 积极 | 30  | 7.20 | 1.50 |
-| 中性 | 30  | 6.10 | 1.40 |
-| 消极 | 30  | 5.80 | 1.60 |
-
-### 3. F 检验思路
-
-```
-H0: μ积极 = μ中性 = μ消极  （三组均值都相等）
-H1: 至少有一组与其他不同
-```
-
-如果跑出来 F(2, 87) = 7.34, p = .001，说明**至少有一对**显著不同——但**不知道**是哪一对。这就是为什么需要事后比较。
-
-::: warning F 显著只是入场券
-F 显著意味着"组间存在差异"，但**不告诉你**：
-
-- 是哪两组之间显著
-- 差异的方向
-- 差异有多大
-
-这三个问题分别要靠：事后比较 / 描述性统计 / 效应量来回答。
-:::
-
-## 六、事后比较：显著之后做什么
-
-事后比较的核心目的：**做多次比较的同时，控制总的假阳性率**（family-wise error rate, FWER）。
-
-### 1. 常用方法对比
-
-| 方法             | 适用场景                 | 严格度            | 备注                                   |
-| ---------------- | ------------------------ | ----------------- | -------------------------------------- |
-| **Tukey HSD**    | 所有两两比较             | 中                | 社心方向**最常用**；要求方差齐         |
-| **Bonferroni**   | 任意几个比较             | 高（保守）        | 简单、可用于任何情形；比较多时损失功效 |
-| **Sidak**        | 任意几个比较             | 略宽于 Bonferroni | 用得少；比较独立时更准                 |
-| **Scheffé**      | 任意复杂对比             | 最高              | 包括"A vs (B+C 平均)"这种线性组合      |
-| **Games-Howell** | 所有两两比较             | 中                | **方差不齐时用它替代 Tukey**           |
-| **Dunnett**      | 所有组 vs **一个对照组** | 中                | 临床/干预研究的标配                    |
-| **LSD**          | 所有两两比较             | **不校正**        | 只在 F 显著后用，但仍不推荐            |
-
-### 2. 方法选择的简单技巧
-
-::: code-group
-
-```text [常规情况]
-1. 你的目的是什么？
-   - 所有组两两比较 → Tukey HSD（方差齐）/ Games-Howell（方差不齐）
-   - 比所有组与对照组 → Dunnett
-   - 检验线性趋势或自定义对比 → 计划比较 / Scheffé
-
-2. 比较数目不多（≤3）但需要绝对保守 → Bonferroni
-3. 比较数目很多（>10）→ Bonferroni 损失功效大，考虑 FDR 校正
-```
-
-```text [通用解法]
-默认 Games-Howell（不依赖方差齐性假设），
-报告时附上调整后的 p 值和均值差的 95% CI。
-```
-
-:::
-
-### 3. 接续上面的例子
-
-跑 Tukey HSD 后假设得到：
-
-| 比较         | 均值差 | p (Tukey 调整后) | 95% CI        |
-| ------------ | ------ | ---------------- | ------------- |
-| 积极 vs 中性 | 1.10   | .013             | [0.21, 2.00]  |
-| 积极 vs 消极 | 1.40   | < .001           | [0.51, 2.30]  |
-| 中性 vs 消极 | 0.30   | .69              | [-0.59, 1.20] |
-
-这告诉我们：积极情绪的创造力**显著高于**中性和消极组，但中性与消极没差异。和 broaden-and-build 理论中"是积极情绪本身有效"的预测一致——不仅仅是"消极情绪损害创造力"。
-
-::: tip 计划比较 vs 事后比较
-事后比较是"看到结果后再决定比哪些"，要做严格校正。**计划比较**（planned contrasts）是论文/预注册里**事先**写明的特定对比（比如"我假设积极情绪比另外两组的平均水平高"），可以用更宽松的标准（甚至不校正），但前提是<span class="kw">必须事先声明、事先写在预注册里</span>。
-:::
-
-## 七、效应量：η²、partial η²、ω²
-
-光报 F 和 p 不够。F 大可以是因为效应大、也可以是因为样本量大。**效应量**才告诉你"效应实际上有多大"。
-
-### 1. 三个常见指标
-
-$$
-\eta^2 = \frac{SS_{\text{effect}}}{SS_{\text{total}}}
-$$
-
-总变异中被这个因素解释的比例。**简单直观，但有偏（小样本下高估）**。
-
-$$
-\eta_p^2 = \frac{SS_{\text{effect}}}{SS_{\text{effect}} + SS_{\text{error}}}
-$$
-
-partial η²，**不受其他因素影响**，是 SPSS 双因素 ANOVA 的默认输出。注意：在双因素及以上设计中，所有 partial η² 加起来**可以超过 1**（每个都用了独立的"该效应 + 误差"作分母），别被这点搞糊涂。
-
-$$
-\omega^2 = \frac{SS_{\text{effect}} - (k-1) MS_{\text{error}}}{SS_{\text{total}} + MS_{\text{error}}}
-$$
-
-omega-squared，**无偏估计**。小样本时与 η² 差距明显，通常**比 η² 略小**。审稿严格的期刊越来越偏爱 ω²。
-
-### 2. Cohen 的解读标尺（仅供参考）
-
-| 量级 | η² / partial η² | Cohen's f |
-| ---- | --------------- | --------- |
-| 小   | 0.01            | 0.10      |
-| 中   | 0.06            | 0.25      |
-| 大   | 0.14            | 0.40      |
-
-::: warning 如何评估效应量
-Cohen 的标尺是 1988 年基于行为科学普遍水平制定的。不同子领域基线不同——
-
-- 反应时实验里 partial η² > 0.20 算正常；
-- 横断问卷研究里 partial η² > 0.10 就已经偏大。
-
-更可靠的做法是与同一研究问题的 meta-analysis 比较。
-:::
-
-### 3. 单因素 ANOVA 例子的效应量
-
-继续上面的情绪 × 创造力数据：F(2, 87) = 7.34, p = .001。
-
-- η² = 0.144（创造力 14.4% 的变异被情绪条件解释）
-- ω² = 0.123（无偏估计，比 η² 略小）
-
-## 八、双因素 ANOVA：交互效应才是关键
-
-### 1. 主效应 vs. 交互效应
-
-双因素设计同时操纵两个分类 IV，可以同时检验三个东西：
-
-- **A 的主效应**（main effect of A）：忽略 B，A 的不同水平之间是否有差异？
-- **B 的主效应**：忽略 A，B 的不同水平之间是否有差异？
-- **A × B 交互效应**（interaction）：A 的效应是否依赖于 B 的水平？
-
-**交互效应几乎永远是双因素设计真正想检验的东西**——它直接对应"调节效应"的统计检验（[3.5](./mediation-moderation)）。
-
-### 2. 经典例子：刻板印象威胁
-
-Steele & Aronson (1995) 的刻板印象威胁效应：
-
-- 当数学测验被框架为"诊断认知能力"时，女性表现下降；男性不受影响。
-- 当被框架为"无关认知"时，性别差异消失。
-
-设计：
-
-- **IV1**：威胁条件（威胁 / 无威胁）
-- **IV2**：性别（女 / 男）
-- **DV**：数学成绩（0–100）
-
-### 3. 假设虚拟数据（2 × 2，每格 n = 25）
-
-|                | 女性    | 男性    |
-| -------------- | ------- | ------- |
-| **威胁条件**   | 65 (12) | 78 (10) |
-| **无威胁条件** | 76 (11) | 79 (11) |
-
-格子里是 _M_ (_SD_)。
-
-### 4. 三个效应分别说什么
-
-跑出 ANOVA 表（数字仅示意）：
-
-| 来源           | F     | df      | p    | partial η² |
-| -------------- | ----- | ------- | ---- | ---------- |
-| 威胁条件主效应 | 8.34  | (1, 96) | .005 | .080       |
-| 性别主效应     | 12.45 | (1, 96) | .001 | .115       |
-| 威胁 × 性别    | 6.78  | (1, 96) | .011 | .066       |
-
-- **威胁主效应**：威胁组（71.5）< 无威胁组（77.5）。但这个平均掩盖了真相。
-- **性别主效应**：男性（78.5）> 女性（70.5）。这个也只是表象。
-- **交互效应**：威胁的影响**依赖于**性别。这才是关键。
-
-### 5. profile plot 怎么读
-
-![刻板印象威胁 × 性别 在数学成绩上的交互效应](/images/chapters/3-statistics/anova-profile-plot.png)
-
-判断有没有交互效应只看一件事——**两条线是否平行**：
-
-- **平行** → 无交互（一个 IV 的效应在另一个 IV 各水平上一致）
-- **不平行** → 有交互
-- **相交（叉形）** → "全交叉"交互（disordinal）：方向甚至会反转
-- **不相交但发散** → "顺序型"交互（ordinal）
-
-上图的两条线明显不平行——威胁条件下女男差 13 分，无威胁条件下只差 3 分。这就是 _F_(1, 96) = 6.78, _p_ = .011 这个交互效应在视觉上长什么样。
-
-::: details 想自己复现这张图？
-完整脚本：<a href="/code/generate_anova_plots.py" download>下载 generate_anova_plots.py</a>。改改 `female_means`、`male_means` 这几个数组就能用在你自己的数据上，同时会生成 profile plot 和 bar chart 两版。
-:::
-
-### 6. 简单效应分析
-
-交互显著后，要做**简单效应分析**（simple effects analysis）——固定一个 IV 的水平，看另一个 IV 在该水平下的效应。例如：
-
-- 在**威胁条件**下检验性别效应：男性 (78) vs. 女性 (65)，_F_(1, 96) = 18.5, _p_ < .001（显著）
-- 在**无威胁条件**下检验性别效应：男性 (79) vs. 女性 (76)，_F_(1, 96) = 1.2, _p_ = .28（不显著）
-
-结论：**性别差异只在威胁条件下出现**——这正是刻板印象威胁理论的核心预测。
-
-::: warning 主效应不能光看平均值
-看到"威胁主效应显著"就以为"威胁让所有人变差"是错的——交互显著时，主效应的解释**必须分组讨论**。<span class="kw">交互显著时主效应通常意义有限。</span>
-:::
-
-## 九、协方差分析（ANCOVA）
-
-### 1. ANCOVA 在做什么
-
-ANCOVA = ANOVA + **连续协变量**（covariate）。它在检验组间均值差异时，把协变量的影响"统计上扣除"：
-
-$$
-\text{校正后的均值} = \bar{X}_{\text{组}} - b \times (\bar{X}_{\text{协变量, 组}} - \bar{X}_{\text{协变量, 总}})
-$$
-
-输出会给"调整均值"（adjusted mean / estimated marginal mean），就是把每组在协变量上的差异**抹平**到总均值水平后的预测。
-
-### 2. 用 ANCOVA 的两个正当目的
-
-- **降低误差方差，提升功效**：如果协变量与 DV 高度相关，把它的方差先排除，剩下的组间差异在更小的"噪声"背景下变得显著。
-- **控制随机分配后仍存在的微小不平衡**：随机分配理论上会平衡所有变量，但小样本下仍可能不平衡，ANCOVA 可以做事后校正。
-
-### 3. ANCOVA 的三个关键假设
-
-1. **协变量与 DV 之间是线性关系**（不是 U 型、对数等）。
-2. **组间回归斜率相等**（homogeneity of regression slopes）：每组里"协变量 → DV"的斜率应该一致。如果不等，意味着有协变量 × IV 的交互——这时不是 ANCOVA 的问题，而是模型本身需要重新考虑。
-3. **协变量在 IV 操纵之前测量**——这是 ANCOVA **最容易踩的坑**。
-
-<!-- ### 4. 别用 ANCOVA 来"找补"非随机分组
-
-::: danger Lord 悖论
-Lord (1967) 提出的悖论：两组**自然形成**（不是随机分配）的被试，他们在协变量上有不同的均值。你想知道"控制协变量后的组间差异"。
-
-- 用变化分（DV_post - DV_pre）：可能得到"无差异"。
-- 用 ANCOVA（DV_post 为 DV，DV_pre 为协变量）：可能得到"显著差异"。
-
-两个分析都"对"，但结论相反——因为它们回答的是不同的因果问题。<span class="kw">在非随机分配的情况下，ANCOVA 不能"修复"组间的预存差异，只是把因果推断的责任偷偷转移给了一个未必合理的统计假设。</span>
-
-实操底线：
-
-- **随机分配的实验** + **基线变量作协变量** → 用 ANCOVA 没问题，且推荐。
-- **非随机分组**（自然组、自选组）→ ANCOVA 不能简单地把组间差异"抹平"。需要倾向得分匹配、工具变量等更专业的因果推断方法。
-  ::: -->
-
-::: danger ANCOVA的常见误用
-如果协变量是在 IV 操纵**之后**测量的，且它本身受 IV 影响，那么把它当协变量"控制"会造成 collider bias（对撞偏差）——你不仅没控制混淆，反而**人为制造**了选择偏差。
-
-实操规则：协变量必须是**操纵前**就确定的特征（基线测量、人口学、稳定特质），永远不要把后测的、可能受操纵影响的变量当协变量。
-:::
-
-## 十、SPSS 实现
-
-### 1. 单因素 ANOVA
-
-**菜单**：`Analyze → Compare Means → One-Way ANOVA`
-
-**语法**：
-
-```text
-ONEWAY creativity BY emotion
-  /STATISTICS DESCRIPTIVES HOMOGENEITY WELCH
-  /POSTHOC = TUKEY GH ALPHA(0.05).
-```
-
-`WELCH` 给出 Welch 校正后的 F；`GH` 是 Games-Howell 事后比较（方差不齐时用）。
-
-### 2. 双因素 ANOVA（含交互）
-
-**菜单**：`Analyze → General Linear Model → Univariate`
-
-把 DV 拖入 Dependent Variable；把两个 IV 拖入 Fixed Factor(s)；点 Plots 设置 profile plot；点 Options 勾 Estimates of effect size、Descriptive statistics、Homogeneity tests。
-
-**语法**：
-
-```text
-UNIANOVA math_score BY threat gender
-  /METHOD=SSTYPE(3)
-  /POSTHOC = threat gender (TUKEY)
-  /PLOT=PROFILE(threat*gender)
-  /EMMEANS=TABLES(threat*gender) COMPARE(threat) ADJ(BONFERRONI)
-  /EMMEANS=TABLES(threat*gender) COMPARE(gender) ADJ(BONFERRONI)
-  /PRINT = ETASQ DESCRIPTIVE HOMOGENEITY
-  /CRITERIA=ALPHA(.05).
-```
-
-`COMPARE(...)` 那两行做的就是**简单效应分析**——分别在每个 threat 水平下比较 gender、在每个 gender 水平下比较 threat。
-
-### 3. ANCOVA
-
-```text
-UNIANOVA posttest BY group WITH pretest
-  /METHOD=SSTYPE(3)
-  /EMMEANS=TABLES(group) WITH(pretest=MEAN) COMPARE ADJ(BONFERRONI)
-  /PRINT=ETASQ DESCRIPTIVE
-  /CRITERIA=ALPHA(.05).
-```
-
-注意 `WITH` 关键词——SPSS 用它区分协变量（continuous）和因素（categorical）。`EMMEANS` 给的就是**调整后的均值**。
-
-### 4. 检验 ANCOVA 的同质斜率假设
-
-```text
-UNIANOVA posttest BY group WITH pretest
-  /DESIGN=group pretest group*pretest.
-```
-
-如果 `group*pretest` 显著，说明斜率不齐，ANCOVA 假设违背。
-
-## 十一、Python 实现
-
-### 1. 单因素 ANOVA
-
-::: code-group
-
-```python [scipy（最简）]
-from scipy import stats
-
-f, p = stats.f_oneway(positive, neutral, negative)
-# 注意：scipy 没有事后比较，也没有效应量
-```
-
-```python [statsmodels（标准）]
+```python
+import numpy as np
+import pandas as pd
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
-model = ols('creativity ~ C(emotion)', data=df).fit()
-anova_table = sm.stats.anova_lm(model, typ=2)
-print(anova_table)
+rng = np.random.default_rng(20260825)
+spec = [("positive", 7.20, 1.50), ("neutral", 6.10, 1.40), ("negative", 5.80, 1.60)]
+rows = []
+for emotion, mean, sd in spec:
+    z = rng.normal(size=30)
+    x = mean + sd * (z - z.mean()) / z.std(ddof=1)
+    rows.extend({"emotion": emotion, "creativity": value} for value in x)
+df = pd.DataFrame(rows)
+
+model = ols("creativity ~ C(emotion)", data=df).fit()
+table = sm.stats.anova_lm(model, typ=2)
+effect = table.loc["C(emotion)"]
+error = table.loc["Residual"]
+ms_error = error["sum_sq"] / error["df"]
+eta2 = effect["sum_sq"] / table["sum_sq"].sum()
+omega2 = (effect["sum_sq"] - effect["df"] * ms_error) / (
+    table["sum_sq"].sum() + ms_error
+)
+posthoc = pairwise_tukeyhsd(df["creativity"], df["emotion"])
+
+print(df.groupby("emotion")["creativity"].agg(["count", "mean", "std"]).round(2))
+print(f"F({effect['df']:.0f}, {error['df']:.0f}) = {effect['F']:.2f}, p = {effect['PR(>F)']:.4g}")
+print(f"eta2 = {eta2:.3f}, omega2 = {omega2:.3f}")
+print(posthoc)
 ```
 
-```python [pingouin（推荐）]
-import pingouin as pg
+在 `statsmodels 0.14.6`、NumPy 2.5.2、pandas 3.0.5 下运行，得到的关键结果是：三组（negative/neutral/positive）的均值分别为 5.80/6.10/7.20，SD 为 1.60/1.40/1.50；$F(2,87)=7.22$，$p=.0013$，$\eta^2=.142$，$\omega^2=.121$。Tukey 的调整后结果为 positive − neutral = 1.10，95% CI [0.18, 2.02]，$p=.0155$；positive − negative = 1.40，95% CI [0.48, 2.32]，$p=.0015$；neutral − negative = 0.30，95% CI [-0.62, 1.22]，$p=.7202$。这是固定种子下的教学输出，不是心理学效应的先验保证；换数据或软件版本应重新运行。
 
-# 主检验
-pg.anova(data=df, dv='creativity', between='emotion', detailed=True)
-# 输出含 SS, DF, MS, F, p, np2 (partial η²)
+阅读自己的输出时按以下顺序：
 
-# Welch's ANOVA（方差不齐时）
-pg.welch_anova(data=df, dv='creativity', between='emotion')
+1. 先看每组 `n`、均值、SD 和原始点图，确认编码与缺失；
+2. 再看总体 F 或 Welch F 的 df、p 和效应量；
+3. 最后看预先计划的对比或 Tukey/Games–Howell 表：均值差、95% CI、调整后的 p 值，而不是只看“显著/不显著”。
 
-# 事后比较
-pg.pairwise_tukey(data=df, dv='creativity', between='emotion')
-pg.pairwise_gameshowell(data=df, dv='creativity', between='emotion')
-pg.pairwise_tests(data=df, dv='creativity', between='emotion', padjust='bonf')
-```
+单因素效应量常用：
 
-:::
+$$
+\eta^2=\frac{SS_{\text{effect}}}{SS_{\text{total}}},\qquad
+\omega^2=\frac{SS_{\text{effect}}-df_{\text{effect}}MS_{\text{error}}}{SS_{\text{total}}+MS_{\text{error}}}
+$$
 
-### 2. 双因素 ANOVA
+$\eta^2$ 在样本有限时往往偏大；$\omega^2$ 是常用的偏差修正估计。不要把 Cohen 的小/中/大标尺当成领域结论，优先结合量表单位、置信区间和相近研究解释实际意义。
+
+## 五、双因素 ANOVA：交互决定如何讲故事
+
+以“威胁框架（威胁/无威胁）× 性别（女/男）→ 数学成绩”为例，模型包含两个主效应和一个交互项：
+
+$$
+Y=\beta_0+\beta_A A+\beta_B B+\beta_{AB}(A\times B)+\varepsilon
+$$
+
+交互检验的是“一个因素的差异是否随另一个因素水平改变”。两条均值线不平行是有用的可视线索，但正式判断仍看交互项的估计、CI 和检验。若交互值得解释：
+
+1. 按理论预先指定的方向做简单效应或边际均值对比；
+2. 为多次简单效应设定 Holm、Bonferroni 或其他预先说明的校正；
+3. 报告每个条件的均值/CI 和对比，而不是只说“主效应被交互吞掉”。
+
+Python（`statsmodels` 0.14.6 文档，核查于 2026-08-25）的最小模型写法：
 
 ```python
-# pingouin
-pg.anova(data=df, dv='math_score',
-         between=['threat', 'gender'], detailed=True)
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
 
-# statsmodels（含交互）
-model = ols('math_score ~ C(threat) * C(gender)', data=df).fit()
-anova_table = sm.stats.anova_lm(model, typ=3)  # 注意 Type III
-print(anova_table)
+model = ols("math_score ~ C(threat) * C(gender)", data=df).fit()
+anova_lm(model, typ=2)  # 平衡设计常用；不平衡时先写明平方和与对比编码
 ```
 
-::: warning Python 跑 Type III SS 有个坑
-statsmodels 的 `anova_lm` 默认是 Type II SS，要显式写 `typ=3`。但仅指定 `typ=3` 还不够——必须把分类变量编码为 **sum contrast**（或叫 effect coding）：
+Type I SS 按项进入模型的顺序计算；Type II 适合没有交互或把交互作为非目标项的情形；Type III 检验在控制其他项（含交互）后的效应，且必须明确对比编码。SPSS GLM 常以 Type III 为默认，但这不是“更保守”或所有问题的通用最佳选择；在 Python/R 中使用 Type III 时，把对比编码和截距写进分析计划。
 
-```python
-from patsy.contrasts import Sum
-model = ols('math_score ~ C(threat, Sum) * C(gender, Sum)', data=df).fit()
-sm.stats.anova_lm(model, typ=3)
+## 六、重复测量、混合设计与 ANCOVA 的边界
+
+- 三个以上被试内水平的经典重复测量 ANOVA 需要关注球形性；违反时可报告 Greenhouse–Geisser/Huynh–Feldt 校正，或直接使用能处理不规则时间和缺失的混合效应模型。
+- 混合设计同时有被试间和被试内因素。若每位被试的观测次数不等、时间间隔不齐或缺失明显，混合效应模型通常比删掉整行更合适（见 [3.6](./multilevel)）。
+- ANCOVA 的协变量应在处理前测量，和结果近似线性相关，并检查各组回归斜率是否相同。后处理变量可能是处理影响的中介或碰撞变量，控制它会改变目标问题；在非随机分组中，ANCOVA 也不能把未测混淆“抹掉”。
+
+SPSS 菜单名称会随版本略变（核查日 2026-08-25）：
+
+```text
+Analyze → General Linear Model → Univariate
+  Fixed Factor(s): group
+  Covariate(s): pretest       # 仅当 pretest 是处理前变量
+  Options: Descriptive statistics, Estimates of effect size
 ```
 
-如果不改 contrast，得到的"Type III SS"其实是错的。这是 R 用户和 SPSS 用户来 Python 时最常踩的坑。pingouin 已经帮你处理好了，所以一般推荐 pingouin。
-:::
+对应语法示例：
 
-### 3. 简单效应分析
-
-```python
-# 在 threat=1（威胁条件）下检验 gender 效应
-threat_data = df[df['threat'] == 'threat']
-pg.anova(data=threat_data, dv='math_score', between='gender')
-
-# 或者一次解决
-pg.pairwise_tests(data=df, dv='math_score',
-                  between=['threat', 'gender'])
+```text
+UNIANOVA posttest BY group WITH pretest
+  /METHOD=SSTYPE(2)
+  /PRINT=DESCRIPTIVE ETASQ
+  /EMMEANS=TABLES(group) WITH(pretest=MEAN) COMPARE(group) ADJ(HOLM)
+  /DESIGN=pretest group.
 ```
 
-### 4. ANCOVA
+若研究问题是“斜率是否因组而异”，先拟合 `pretest*group`，不要把显著交互硬塞进一个没有斜率同质假设的 ANCOVA。
 
-```python
-import pingouin as pg
+## 七、SPSS / Python 操作清单
 
-pg.ancova(data=df, dv='posttest', between='group', covar='pretest')
-# 输出含主效应、协变量效应、partial η²
-```
+### SPSS
 
-### 5. 可视化（必看）
+1. 用 `Analyze → Descriptive Statistics → Explore` 检查各组 n、箱线图和 Q–Q 图。
+2. 独立组：`Analyze → Compare Means → One-Way ANOVA`；需要时勾选 Welch，并只选择与研究问题对应的事后比较。
+3. 双因素：`Analyze → General Linear Model → Univariate`，在 `Model` 确认交互项，在 `Plots` 生成 profile plot，在 `Options` 保存边际均值和效应量。
+4. 保存 `.sav`、语法、输出和 SPSS 版本；导出表格前核对因子编码、有效样本数和 CI。
 
-```python
-import seaborn as sns
-import matplotlib.pyplot as plt
+### Python
 
-# 单因素：箱线图 + 点图
-sns.boxplot(data=df, x='emotion', y='creativity')
-sns.stripplot(data=df, x='emotion', y='creativity', color='black', alpha=0.3)
+- `statsmodels`：公式模型、ANOVA 表和 Tukey；适合把设计写进可复现脚本。
+- `pingouin`：可提供 Welch ANOVA、Games–Howell 和效应量；运行前核对当前 API 与版本。
+- 画原始点和均值/CI 图；不要只导出柱状图。图形用于发现离群点、缺失和交互方向，不能替代模型检验。
 
-# 双因素：profile plot（看交互）
-sns.pointplot(data=df, x='threat', y='math_score', hue='gender',
-              dodge=0.1, errorbar='se')
-```
+## 八、常见结果信号与排错
 
-<span class="kw">ANOVA 跑出结果第一件事就是画 profile plot</span>，光看数字常会漏掉交互的方向。
+| 信号 | 先核对 | 下一步 |
+| --- | --- | --- |
+| F 显著但不知道哪组不同 | 总体检验的零假设只说“至少一组不同” | 运行预先计划对比或合适的事后比较 |
+| Welch F 显著、经典 F 不显著 | 方差/样本量不平衡 | 报告为何选 Welch，不挑显著的那个 |
+| 交互显著 | 条件均值、简单效应和校正 | 不用平均主效应替代条件比较 |
+| 结果对一个点很敏感 | 原始点、录入和排除规则 | 做透明的敏感性分析，不能事后删点 |
+| 配对/重复测量 n 变少 | ID 匹配和缺失模式 | 改用重复测量模型或混合模型 |
+| ANCOVA 结果方向改变 | 协变量是否为处理后变量、斜率是否同质 | 重新定义因果问题并报告模型边界 |
 
-## 十二、APA 报告模板
+## 九、报告模板
 
-### 1. 单因素 ANOVA + 事后比较
+> 单因素 ANOVA 显示，情绪条件对创造力的总体差异为 _F_(2, 87) = …，_p_ = …，$\eta^2$ = …，95% CI …。Tukey（或 Games–Howell）比较显示，积极组 − 中性组的均值差为 …，95% CI […]，调整后 _p_ = …。各组 _M_、_SD_ 和有效 _n_ 见表 …。该结果在随机分配且操纵/缺失处理符合设计的前提下支持条件间差异；观察性数据只能写成关联。
 
-> 单因素方差分析显示，情绪条件对创造力得分有显著影响，_F_(2, 87) = 7.34, _p_ = .001, η² = .14, 90% CI [.04, .25]。Tukey HSD 事后比较表明，积极情绪组的创造力（_M_ = 7.20, _SD_ = 1.50）显著高于中性组（_M_ = 6.10, _SD_ = 1.40），_p_ = .013, 95% CI for mean difference [0.21, 2.00]，也显著高于消极组（_M_ = 5.80, _SD_ = 1.60），_p_ < .001, 95% CI [0.51, 2.30]；中性组与消极组之间无显著差异，_p_ = .69。
-
-### 2. 双因素 ANOVA + 简单效应
-
-> 2（威胁：威胁/无威胁）× 2（性别：女/男）方差分析揭示，威胁条件主效应显著，_F_(1, 96) = 8.34, _p_ = .005, partial η² = .080；性别主效应显著，_F_(1, 96) = 12.45, _p_ = .001, partial η² = .115。**关键的，威胁 × 性别交互效应显著**，_F_(1, 96) = 6.78, _p_ = .011, partial η² = .066。
->
-> 简单效应分析显示，在威胁条件下，女性（_M_ = 65.0）数学成绩显著低于男性（_M_ = 78.0），_F_(1, 96) = 18.5, _p_ < .001；而在无威胁条件下，性别差异不显著，_F_(1, 96) = 1.20, _p_ = .28（女性 _M_ = 76.0；男性 _M_ = 79.0）。这一模式与刻板印象威胁理论的预测一致。
-
-### 3. ANCOVA
-
-> 在控制基线焦虑分（pretest）后，干预组与对照组的后测焦虑分存在显著差异，_F_(1, 117) = 14.32, _p_ < .001, partial η² = .109。干预组的调整均值（_M_\_adj = 18.4, _SE_ = 0.5）显著低于对照组（_M_\_adj = 22.7, _SE_ = 0.5），均值差 = -4.30, 95% CI [-6.55, -2.05]。基线分对后测分有显著正向影响，_F_(1, 117) = 89.21, _p_ < .001。
-
-## 十三、常见错误清单
-
-::: danger 最常踩的坑
-
-1. **三组数据做三次 t 检验**——I 类错误率从 5% 飙到 14%。请用 ANOVA + 事后比较。
-2. **F 显著就大功告成**——F 显著只是入场券，必须做事后比较或简单效应才能定位差异。
-3. **F 不显著但仍做事后比较**——传统流程要求 F 显著才做。但若有**计划比较**且预注册，可以直接做。
-4. **交互显著时只解读主效应**——交互显著时主效应的解释必须分水平，不能"平均掉"。
-5. **不报告效应量**——APA 7 要求必报。η² / partial η² / ω² 选一个，但要说清楚是哪一个。
-6. **协变量是后测变量**——若协变量受 IV 影响，控制它会引入对撞偏差，结论不可信。
-
-:::
-
-## 十四、什么时候不该用 ANOVA
-
-| 你的情况                    | 替代方案                                    |
-| --------------------------- | ------------------------------------------- |
-| 二分类 DV                   | Logistic 回归 / 卡方                        |
-| 严重偏态 + 小样本           | Kruskal-Wallis（非参 ANOVA）                |
-| 重复测量                    | 重复测量 ANOVA / 多层模型                   |
-| 嵌套 / 多层数据             | 多层线性模型（[3.6](./multilevel)）         |
-| 多个连续 DV 同时考察        | MANOVA（[3.2.3](./manova)）                 |
-| 协变量与 DV 关系非线性      | 用回归 + 多项式项 / GAM                     |
-| 因子水平有顺序（如剂量）    | 趋势分析（线性、二次对比）                  |
-| 想用调节而非"分类 IV"的视角 | 调节回归（[3.5.2](./mediation-moderation)） |
+双因素报告还要写清因素水平、交互项、简单效应的对比方向和校正方法。ANCOVA 报告协变量、调整均值（estimated marginal means）、斜率检查、效应量和 CI；不要只报告“控制了基线所以更准确”。
 
 ## 资源与工具
 
 <ResourceGrid :min="220">
   <ResourceCard
-    name="pingouin"
-    desc="Python 心理学统计包 · ANOVA / ANCOVA 默认输出 partial η²"
+    name="statsmodels ANOVA"
+    desc="公式模型、ANOVA 表与平方和说明（核查 0.14.6）"
+    href="https://www.statsmodels.org/stable/anova.html"
+    icon="P"
+  />
+  <ResourceCard
+    name="statsmodels Tukey HSD"
+    desc="多重两两比较的官方 API"
+    href="https://www.statsmodels.org/stable/generated/statsmodels.stats.multicomp.pairwise_tukeyhsd.html"
+    icon="P"
+  />
+  <ResourceCard
+    name="Pingouin"
+    desc="Welch、Games–Howell 与效应量；先核对当前版本"
     href="https://pingouin-stats.org/"
-    icon="🐧"
+    icon="P"
   />
   <ResourceCard
-    name="afex (R)"
-    desc="ANOVA 一站式包 · 自动处理 Type III SS 与 contrast"
-    href="https://github.com/singmann/afex"
-    icon="📦"
-  />
-  <ResourceCard
-    name="JASP"
-    desc="开源软件 · ANOVA 输出贝叶斯因子和 robust 版本"
-    href="https://jasp-stats.org/"
-    icon="🧮"
-  />
-  <ResourceCard
-    name="Lakens (2013)"
-    desc="效应量计算与报告的实操教程"
-    href="https://www.frontiersin.org/articles/10.3389/fpsyg.2013.00863/full"
-    icon="📏"
+    name="IBM SPSS Statistics 文档"
+    desc="GLM/ANOVA 菜单与语法会随版本变化"
+    href="https://www.ibm.com/docs/en/spss-statistics"
+    icon="S"
   />
 </ResourceGrid>
 
 ## 延伸阅读
 
-- Maxwell, S. E., Delaney, H. D., & Kelley, K. (2018). _Designing experiments and analyzing data: A model comparison perspective_ (3rd ed.). Routledge. ——ANOVA / ANCOVA 的标准研究生教材。
-- Lord, F. M. (1967). A paradox in the interpretation of group comparisons. _Psychological Bulletin, 68_(5), 304–305. ——Lord 悖论原文，三页纸但极清晰。
-- Miller, G. A., & Chapman, J. P. (2001). Misunderstanding analysis of covariance. _Journal of Abnormal Psychology, 110_(1), 40–48. ——心理学家滥用 ANCOVA 的批判性综述，必读。
-- Lakens, D. (2013). Calculating and reporting effect sizes to facilitate cumulative science. _Frontiers in Psychology, 4_, 863. ——η² / partial η² / ω² / Cohen's f 的关系与计算。
-- Steele, C. M., & Aronson, J. (1995). Stereotype threat and the intellectual test performance of African Americans. _Journal of Personality and Social Psychology, 69_(5), 797–811. ——双因素 ANOVA 经典论文，本节例子改编自此。
+- Maxwell, S. E., Delaney, H. D., & Kelley, K. (2017). *Designing experiments and analyzing data: A model comparison perspective*. Routledge. [https://doi.org/10.4324/9781315642956](https://doi.org/10.4324/9781315642956) ——均值比较、因子设计与 ANCOVA 的主干教材。
+- Lakens, D. (2013). Calculating and reporting effect sizes to facilitate cumulative science: A practical primer for t-tests and ANOVAs. *Frontiers in Psychology, 4*, 863. [https://doi.org/10.3389/fpsyg.2013.00863](https://doi.org/10.3389/fpsyg.2013.00863) ——效应量定义、换算与报告。
+- Appelbaum, M., Cooper, H., Kline, R. B., Mayo-Wilson, E., Nezu, A. M., & Rao, S. M. (2018). Journal article reporting standards for quantitative research in psychology: The APA Publications and Communications Board task force report. *American Psychologist, 73*(1), 3–25. [https://doi.org/10.1037/amp0000191](https://doi.org/10.1037/amp0000191) ——报告估计值、不确定性、模型与设计边界。
