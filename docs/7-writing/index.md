@@ -16,7 +16,7 @@ description: 章节导读
 - [**7.1 文献综述写作**](./literature-review)
 - [**7.2 IMRD 各部分要点**](./imrd) — Intro · Methods · Results · Discussion
 - [**7.3 投稿策略**](./submission) — 选刊 · cover letter · 时间预期
-- [**7.4 审稿与回复**](./peer-review) — 应对 R&R 的姿态
+- [**7.4 审稿与回复**](./peer-review) — 逐点回复 · 修订记录
 - [**7.5 排版与格式细节**](./formatting) — APA 7 · 图表注 · 参考文献
 
 </OutlineCard>
@@ -39,7 +39,7 @@ description: 章节导读
 
 ## 建议先准备什么？
 
-先有一页研究备忘录：研究问题、估计目标、观测单位、主要结果、最小关注效应和“不声称什么”。如果这些字段还不稳定，先回到 [2.1 研究问题与假设](../2-design/question-hypothesis)、[2.2 测量](../2-design/measurement) 和 [2.5 预注册与开放科学](../2-design/preregistration)。需要检查模型、效应量或不确定性时，回到 [3 · 统计](../3-statistics/)；需要统一图表和导出时，查看 [4 · 科研作图](../4-visualization/)。
+先有一页研究备忘录：研究问题、估计目标、观测单位、主要结果、最小关注效应和“不声称什么”。这里的**估计目标**是“到底要比较或估计什么”，例如静音组与正常通知组的平均正确率差；**最小关注效应**是小到什么程度就不再值得作理论或实践解释，它不是把 _p_ < .05 换一个名字。如果这些字段还不稳定，先回到 [2.1 研究问题与假设](../2-design/question-hypothesis)、[2.2 测量](../2-design/measurement)、[2.4 取样与功效分析](../2-design/sampling-power) 和 [2.5 预注册与开放科学](../2-design/preregistration)。需要检查模型、效应量或不确定性时，回到 [3 · 统计](../3-statistics/)；需要统一图表和导出时，查看 [4 · 科研作图](../4-visualization/)。
 
 ## 我现在应该从哪一节开始？
 
@@ -84,5 +84,5 @@ description: 章节导读
 ## 延伸阅读
 
 - American Psychological Association. (2020). *Publication Manual of the American Psychological Association* (7th ed.). https://apastyle.apa.org/products/publication-manual-7th-edition
-- Appelbaum, M., et al. (2018). Journal article reporting standards for quantitative research in psychology. *American Psychologist, 73*(1), 3–25. https://doi.org/10.1037/amp0000191
-- Page, M. J., et al. (2021). The PRISMA 2020 statement. *BMJ, 372*, n71. https://doi.org/10.1136/bmj.n71
+- Appelbaum, M., et al. (2018). Journal article reporting standards for quantitative research in psychology: The APA Publications and Communications Board task force report. *American Psychologist, 73*(1), 3–25. https://doi.org/10.1037/amp0000191
+- Page, M. J., et al. (2021). The PRISMA 2020 statement: An updated guideline for reporting systematic reviews. *BMJ, 372*, n71. https://doi.org/10.1136/bmj.n71
