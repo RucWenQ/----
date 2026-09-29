@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
-import { mkdtemp, rm } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { mkdtemp, rm, symlink } from "node:fs/promises";
 import { createServer } from "./index.mjs";
 
 const root = await mkdtemp(path.join(os.tmpdir(), "research-workbench-"));
@@ -40,6 +42,26 @@ try {
   const ideaExport = await fetch(`${base}/api/ideas/${idea.id}/export?format=md`);
   assert.equal(ideaExport.status, 200);
   assert.match(await ideaExport.text(), /研究 Idea Spec/);
+
+  const linkedServer = path.join(root, "linked-server");
+  await symlink(path.dirname(fileURLToPath(import.meta.url)), linkedServer, process.platform === "win32" ? "junction" : "dir");
+  const child = spawn(process.execPath, [path.join(linkedServer, "index.mjs")], {
+    env: { ...process.env, RESEARCH_PORT: "0" },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  try {
+    const startup = await Promise.race([
+      new Promise((resolve) => child.stdout.once("data", (chunk) => resolve(chunk.toString()))),
+      new Promise((resolve, reject) => child.once("exit", (code) => reject(new Error(`linked server exited before listening: ${code}`)))),
+      new Promise((resolve, reject) => setTimeout(() => reject(new Error("linked server startup timed out")), 3000)),
+    ]);
+    assert.match(startup, /Research workbench:/);
+  } finally {
+    if (child.exitCode === null) {
+      child.kill();
+      await new Promise((resolve) => child.once("exit", resolve));
+    }
+  }
   console.log("research workbench smoke test passed");
 } finally {
   await new Promise((resolve) => server.close(resolve));

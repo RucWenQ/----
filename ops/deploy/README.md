@@ -1,6 +1,6 @@
 # ECS 部署说明
 
-仓库 workflow 会构建 VitePress 站点、运行工作台冒烟测试，并将静态站点和 Node 工作台上传到 `/var/www/psy-tutorial/releases/<commit-sha>/`。激活脚本通过 `current` 符号链接切换版本；健康检查失败会恢复上一个版本。
+仓库 workflow 会构建 VitePress 站点、运行工作台冒烟测试，并将静态站点和 Node 工作台上传到 `/var/www/psy-tutorial/releases/<commit-sha>/`。激活脚本通过 `current` 符号链接切换版本，并将工作台数据链接到 `/var/www/psy-tutorial/data/`；工作台本机健康检查或站点健康检查失败会恢复上一个版本。
 
 ## 一次性服务器准备
 

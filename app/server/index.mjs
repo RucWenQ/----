@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, readFile, stat } from "node:fs/promises";
+import { mkdir, realpath, stat } from "node:fs/promises";
 import { createStorage } from "./storage.mjs";
 import { runIdeaRefiner, runPaperReview } from "./skill-runner.mjs";
 
@@ -180,7 +180,7 @@ export async function createServer({ dataRoot: root = dataRoot, runner = { runPa
   return server;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
+if (process.argv[1] && await realpath(process.argv[1]) === await realpath(fileURLToPath(import.meta.url))) {
   await mkdir(dataRoot, { recursive: true });
   const port = Number(process.env.RESEARCH_PORT || 4174);
   const server = await createServer({});

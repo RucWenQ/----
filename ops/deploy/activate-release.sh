@@ -24,13 +24,25 @@ previous=""
 if [[ -L "$current" ]]; then previous="$(readlink -f "$current")"; fi
 [[ -f "$release_dir/site/index.html" && -f "$release_dir/site/404.html" ]] || { echo "release is incomplete" >&2; exit 3; }
 [[ -f "$release_dir/app/server/index.mjs" ]] || { echo "workbench server is missing" >&2; exit 3; }
+[[ -f "$release_dir/app/web/research-workbench.html" ]] || { echo "workbench frontend is missing" >&2; exit 3; }
+if [[ -e "$release_dir/data" && ! -L "$release_dir/data" ]]; then
+  echo "release data path is not a symlink" >&2
+  exit 3
+fi
+mkdir -p "$root/data"
+ln -sfn "$root/data" "$release_dir/data"
 
 ln -sfn "$release_dir" "$root/.current-$release"
 mv -Tf "$root/.current-$release" "$current"
 
 sudo -n systemctl restart psy-research-workbench
 
-if ! curl --fail --silent --show-error --location --max-time 20 "$health_url" >/dev/null; then
+healthy=false
+for attempt in 1 2 3 4 5 6 7 8 9 10; do
+  if curl --fail --silent --show-error --max-time 2 http://127.0.0.1:4174/api/health >/dev/null; then healthy=true; break; fi
+  sleep 1
+done
+if [[ "$healthy" != true ]] || ! curl --fail --silent --show-error --location --max-time 20 "$health_url" >/dev/null; then
   if [[ -n "$previous" ]]; then ln -sfn "$previous" "$root/.current-rollback"; mv -Tf "$root/.current-rollback" "$current"; else rm -f "$current"; fi
   sudo -n systemctl restart psy-research-workbench || true
   echo "health check failed; previous release restored" >&2
