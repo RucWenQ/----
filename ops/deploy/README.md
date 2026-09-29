@@ -50,7 +50,7 @@ location /api/ {
 - Secrets: `ALIYUN_SSH_PRIVATE_KEY`, `ALIYUN_KNOWN_HOSTS`
 - Variables: `ALIYUN_HOST`, `ALIYUN_PORT`, `ALIYUN_USER`, `ALIYUN_DEPLOY_ROOT`, `DEPLOY_HEALTHCHECK_URL`
 
-`DEPLOY_HEALTHCHECK_URL` 应是公开 HTTPS 页面，例如 `https://example.com/`。workflow 不会调用 `ssh-keyscan`，请在确认服务器指纹后保存 known hosts。
+`DEPLOY_HEALTHCHECK_URL` 应指向部署后可访问的站点首页。尚无域名和证书时可暂用 `http://<ECS 公网 IP>/`，配置好域名与证书后再改为 `https://example.com/`。HTTP 仅用于健康检查，不会替站点提供传输加密。workflow 不会调用 `ssh-keyscan`，请在确认服务器指纹后保存 known hosts。
 
 ## 手动回滚
 

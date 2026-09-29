@@ -43,7 +43,7 @@ jobs:
           [[ "${ALIYUN_USER}" =~ ^[A-Za-z0-9._-]+$ ]]
           [[ "${ALIYUN_DEPLOY_ROOT}" =~ ^/var/www/[A-Za-z0-9._/-]+$ ]]
           [[ "${ALIYUN_DEPLOY_ROOT}" != "/var/www" ]]
-          [[ "${DEPLOY_HEALTHCHECK_URL}" =~ ^https://[^[:space:]]+$ ]]
+          [[ "${DEPLOY_HEALTHCHECK_URL}" =~ ^https?://[^[:space:]]+$ ]]
           [[ -n "${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}" ]]
           [[ -n "${{ secrets.ALIYUN_KNOWN_HOSTS }}" ]]
 

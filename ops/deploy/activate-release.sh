@@ -13,7 +13,7 @@ if [[ ! "$release" =~ ^[0-9a-f]{40}$ ]]; then
   echo "invalid release id" >&2
   exit 2
 fi
-if [[ ! "$health_url" =~ ^https://[^[:space:]]+$ ]]; then
+if [[ ! "$health_url" =~ ^https?://[^[:space:]]+$ ]]; then
   echo "invalid health URL" >&2
   exit 2
 fi
