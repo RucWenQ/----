@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>研究工作台 · 明德惟心</title>
+    <link rel="stylesheet" href="/research/research-workbench.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/">明德惟心 <span>研究工作台</span></a>
+        <div class="topbar-meta"><span class="status-dot"></span><span id="serviceStatus">正在连接服务</span></div>
+      </header>
+
+      <main class="workspace">
+        <section class="intro-row">
+          <div>
+            <p class="eyebrow">RESEARCH STUDIO / 01</p>
+            <h1>把文献与想法，整理成下一步。</h1>
+            <p class="lede">上传一篇论文，或从一个还没成形的问题开始。这里保存证据、决策和每一次修订。</p>
+          </div>
+          <div class="intro-note"><span>当前模式</span><strong>本地工作区</strong><small>报告与文件保存在当前项目的 data/ 目录。</small></div>
+        </section>
+
+        <nav class="mode-tabs" aria-label="工作区模式">
+          <button class="mode-tab active" data-view="review">文献精读 <span>01</span></button>
+          <button class="mode-tab" data-view="idea">研究问题 <span>02</span></button>
+          <button class="mode-tab" data-view="library">知识库 <span id="libraryCount">0</span></button>
+        </nav>
+
+        <section id="reviewView" class="view active">
+          <div class="view-grid review-grid">
+            <div class="primary-column">
+              <div class="section-heading"><div><p class="eyebrow">PAPER REVIEW</p><h2>上传一篇心理学论文</h2></div><span class="quiet-label">PDF / 25 MB</span></div>
+              <form id="uploadForm" class="upload-zone">
+                <input id="paperFile" type="file" accept="application/pdf,.pdf" required />
+                <div class="upload-icon">↑</div>
+                <div><strong>选择 PDF 文件</strong><p>论文会进入解析、精读、归档流程。</p></div>
+                <button type="submit" class="primary-button">开始精读</button>
+              </form>
+              <div id="runPanel" class="run-panel hidden"></div>
+              <article id="reportPanel" class="report-panel hidden"></article>
+            </div>
+            <aside class="side-column">
+              <div class="side-card"><p class="eyebrow">WORKFLOW</p><h3>一次处理，留下四类信息</h3><ol class="workflow-list"><li><span>01</span><div><strong>文件检查</strong><small>确认 PDF 可读与元数据。</small></div></li><li><span>02</span><div><strong>证据抽取</strong><small>把研究、结果和页码放在一起。</small></div></li><li><span>03</span><div><strong>报告编译</strong><small>生成 Markdown 与 JSON。</small></div></li><li><span>04</span><div><strong>知识库归档</strong><small>之后可以被研究问题工作台引用。</small></div></li></ol></div>
+              <div class="side-card muted-card"><p class="eyebrow">BOUNDARY</p><h3>当前是本地演示 runner</h3><p>页面和归档流程已经可运行；配置真实 skill runner 后，再由模型生成带页码证据的完整报告。</p></div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="ideaView" class="view">
+          <div class="view-grid idea-grid">
+            <div class="primary-column">
+              <div class="section-heading"><div><p class="eyebrow">IDEA REFINER</p><h2>从一个问题开始</h2></div><button id="newIdeaButton" class="ghost-button">新建 idea</button></div>
+              <div class="idea-toolbar"><label for="ideaSelect">当前项目</label><select id="ideaSelect"><option value="">创建一个研究 idea</option></select><span id="ideaStage" class="stage-pill">FRAMING</span></div>
+              <div id="conversation" class="conversation empty-conversation"><div class="empty-state"><span class="empty-mark">?</span><h3>你现在最想知道什么？</h3><p>先写下一个现象、困惑或初步假设。工作台会把它保留为第一版研究问题。</p></div></div>
+              <form id="ideaForm" class="message-form"><textarea id="ideaMessage" rows="3" placeholder="例如：我想知道，人们为什么会把有道德表现的 AI 当成更值得信任的对象……" disabled></textarea><button class="primary-button" type="submit" disabled>推进一步 <span>↗</span></button></form>
+            </div>
+            <aside class="side-column"><div class="side-card spec-card"><div class="spec-header"><div><p class="eyebrow">LIVE SPEC</p><h3>当前研究蓝图</h3></div><button id="exportIdeaButton" class="icon-button" title="导出当前 spec" disabled>↓</button></div><div id="specContent" class="spec-content"><p class="placeholder-copy">发送第一条消息后，这里会显示问题、证据状态、风险和下一步。</p></div></div><div class="side-card"><p class="eyebrow">REVISION HISTORY</p><div id="revisionList" class="revision-list"><p class="placeholder-copy">还没有 revision。</p></div></div></aside>
+          </div>
+        </section>
+
+        <section id="libraryView" class="view"><div class="section-heading"><div><p class="eyebrow">KNOWLEDGE LIBRARY</p><h2>已经归档的文献</h2></div><button id="refreshLibrary" class="ghost-button">刷新</button></div><div id="libraryGrid" class="library-grid"><div class="empty-state wide"><span class="empty-mark">□</span><h3>知识库还是空的</h3><p>完成第一篇文献精读后，报告会出现在这里。</p></div></div></section>
+      </main>
+    </div>
+    <script type="module" src="/research/research-workbench.js"></script>
+  </body>
+</html>

@@ -179,4 +179,13 @@ export const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+
+  // ============== 研究工作台 ==============
+  "/research/": [
+    {
+      text: "研究工作台",
+      collapsed: false,
+      items: [{ text: "工作台入口", link: "/research/" }],
+    },
+  ],
 };

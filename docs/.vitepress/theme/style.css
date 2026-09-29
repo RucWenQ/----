@@ -291,3 +291,22 @@ body::before {
     font-size: 30px;
   }
 }
+
+/* 研究工作台入口 */
+.research-launch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 32px;
+  margin: 32px 0 48px;
+  padding: 30px 0;
+  border-top: 2px solid var(--tutorial-accent);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+.research-kicker { color: var(--tutorial-accent); font: 600 11px/1.2 var(--vp-font-family-mono); letter-spacing: .12em; }
+.research-launch h2 { border: 0; padding: 0; margin: 12px 0 8px; font-size: 30px; }
+.research-launch p { color: var(--vp-c-text-2); }
+.research-button { display: inline-block; margin-top: 12px; padding: 11px 18px; background: var(--tutorial-accent); color: #fff !important; text-decoration: none !important; font-weight: 600; }
+.research-scope { border-left: 1px solid var(--tutorial-accent); padding-left: 16px; display: grid; align-content: start; gap: 7px; }
+.research-scope strong { font: 500 18px "Fraunces", "Noto Serif SC", serif; }
+.research-scope span, .research-scope small { color: var(--vp-c-text-3); font-size: 13px; }
+@media (max-width: 640px) { .research-launch { grid-template-columns: 1fr; } .research-scope { border-left: 0; border-top: 1px solid var(--vp-c-divider); padding: 16px 0 0; } }

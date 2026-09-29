@@ -73,6 +73,7 @@ export default defineConfig({
         ],
       },
       { text: "附录", link: "/appendix/" },
+      { text: "研究工作台", link: "/research/" },
     ],
 
     // 侧边栏（从单独文件导入，便于维护）

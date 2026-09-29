@@ -12,6 +12,10 @@ npm install
 npm run dev
 # → 打开 http://localhost:5173
 
+# 4. 启动本地研究工作台（另开一个终端）
+npm run server
+# → 打开 http://127.0.0.1:4174/research/
+
 # 3. 构建静态站点
 npm run build
 # → 输出在 docs/.vitepress/dist

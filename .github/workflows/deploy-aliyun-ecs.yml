@@ -1,0 +1,70 @@
+name: Deploy site and research workbench
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    env:
+      ALIYUN_HOST: ${{ vars.ALIYUN_HOST }}
+      ALIYUN_PORT: ${{ vars.ALIYUN_PORT || '22' }}
+      ALIYUN_USER: ${{ vars.ALIYUN_USER }}
+      ALIYUN_DEPLOY_ROOT: ${{ vars.ALIYUN_DEPLOY_ROOT }}
+      DEPLOY_HEALTHCHECK_URL: ${{ vars.DEPLOY_HEALTHCHECK_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test:workbench
+      - run: npm run build
+
+      - name: Validate deployment settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${ALIYUN_HOST}" =~ ^[A-Za-z0-9._:-]+$ ]]
+          [[ "${ALIYUN_PORT}" =~ ^[0-9]+$ ]]
+          [[ "${ALIYUN_USER}" =~ ^[A-Za-z0-9._-]+$ ]]
+          [[ "${ALIYUN_DEPLOY_ROOT}" =~ ^/var/www/[A-Za-z0-9._/-]+$ ]]
+          [[ "${ALIYUN_DEPLOY_ROOT}" != "/var/www" ]]
+          [[ "${DEPLOY_HEALTHCHECK_URL}" =~ ^https://[^[:space:]]+$ ]]
+          [[ -n "${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}" ]]
+          [[ -n "${{ secrets.ALIYUN_KNOWN_HOSTS }}" ]]
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' '${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}' > ~/.ssh/deploy_key
+          printf '%s\n' '${{ secrets.ALIYUN_KNOWN_HOSTS }}' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Upload release
+        shell: bash
+        env:
+          RELEASE: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${ALIYUN_PORT}" "${ALIYUN_USER}@${ALIYUN_HOST}" "mkdir -p '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/site' '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/server' '${ALIYUN_DEPLOY_ROOT}/bin'"
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -p ${ALIYUN_PORT}" docs/.vitepress/dist/ "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/site/"
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -p ${ALIYUN_PORT}" app/server/ "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/server/"
+          scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" package.json package-lock.json "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/"
+          scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" ops/deploy/activate-release.sh "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh"
+          ssh -i ~/.ssh/deploy_key -p "${ALIYUN_PORT}" "${ALIYUN_USER}@${ALIYUN_HOST}" "chmod 755 '${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh' && '${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh' '${ALIYUN_DEPLOY_ROOT}' '${RELEASE}' '${DEPLOY_HEALTHCHECK_URL}'"
