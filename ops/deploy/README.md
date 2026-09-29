@@ -25,23 +25,25 @@ sudo systemctl enable psy-research-workbench
 psy-tutorial ALL=(root) NOPASSWD: /usr/bin/systemctl restart psy-research-workbench
 ```
 
-Nginx 需要保留原来的静态站点根目录，并增加：
+`nginx-site.conf` 是当前 IP 站点的完整 Nginx 配置。首次部署激活并确认工作台本机健康后，备份服务器现有 `/etc/nginx/sites-available/ocb`，再安装该文件并执行 `sudo nginx -t && sudo systemctl reload nginx`。它把静态根目录指向 `/var/www/psy-tutorial/current/site`，并将 `/research/` 与 `/api/` 转发给工作台。若服务器已有其他自定义规则，先合并而非直接覆盖。
+
+如果手动维护配置，至少需要保留静态站点规则并增加：
 
 ```nginx
-location /research/ {
+location ^~ /research/ {
     proxy_pass http://127.0.0.1:4174;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 }
 
-location /api/ {
+location ^~ /api/ {
     proxy_pass http://127.0.0.1:4174;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 }
 ```
 
-激活脚本部署后，第一次可以手动检查 release 目录和服务日志，再让 Nginx 指向 release 的 `site/`；确认无误后再将 Nginx 静态根目录切换到 `/var/www/psy-tutorial/current/site`。
+上传文件上限为 25 MB，Nginx 的 `client_max_body_size` 应至少为 `26m`。
 
 ## GitHub 配置
 
