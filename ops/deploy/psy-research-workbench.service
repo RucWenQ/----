@@ -8,6 +8,7 @@ User=psy-tutorial
 WorkingDirectory=/var/www/psy-tutorial/current
 Environment=NODE_ENV=production
 Environment=RESEARCH_PORT=4174
+EnvironmentFile=-/etc/psy-research-workbench.env
 ExecStart=/usr/bin/node /var/www/psy-tutorial/current/app/server/index.mjs
 Restart=always
 RestartSec=3

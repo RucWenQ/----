@@ -6,8 +6,17 @@ import { fileURLToPath } from "node:url";
 import { mkdtemp, rm, symlink } from "node:fs/promises";
 import { createServer } from "./index.mjs";
 
+const testRunner = {
+  async runPaperReview({ runId, upload }) {
+    return { json: { report_id: runId, processing: { status: "complete" }, skill: { mode: "test" }, document: { source_filename: upload.filename } }, markdown: "# test report" };
+  },
+  async runIdeaRefiner({ idea, userMessage }) {
+    return { state: { ...idea.state, schema_version: "1.0", question: { one_sentence: userMessage }, stage: "constructs" }, assistant: "test assistant" };
+  },
+};
+
 const root = await mkdtemp(path.join(os.tmpdir(), "research-workbench-"));
-const server = await createServer({ dataRoot: root });
+const server = await createServer({ dataRoot: root, runner: testRunner });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const address = server.address();
 const base = `http://127.0.0.1:${address.port}`;
@@ -19,7 +28,7 @@ const json = async (url, options) => {
 };
 
 try {
-  assert.deepEqual(await json("/api/health"), { ok: true, service: "research-workbench" });
+  assert.deepEqual(await json("/api/health"), { ok: true, service: "research-workbench", model_configured: true });
   const form = new FormData();
   form.append("paper", new Blob(["%PDF-1.4 demo"], { type: "application/pdf" }), "demo-paper.pdf");
   const upload = await json("/api/uploads", { method: "POST", body: form });

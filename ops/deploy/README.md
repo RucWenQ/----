@@ -27,6 +27,31 @@ psy-tutorial ALL=(root) NOPASSWD: /usr/bin/systemctl restart psy-research-workbe
 
 `nginx-site.conf` 是当前 IP 站点的完整 Nginx 配置。首次部署激活并确认工作台本机健康后，备份服务器现有 `/etc/nginx/sites-available/ocb`，再安装该文件并执行 `sudo nginx -t && sudo systemctl reload nginx`。它把静态根目录指向 `/var/www/psy-tutorial/current/site`，并将 `/research/` 与 `/api/` 转发给工作台。若服务器已有其他自定义规则，先合并而非直接覆盖。
 
+在服务器创建模型环境文件并限制权限：
+
+```bash
+sudoedit /etc/psy-research-workbench.env
+```
+
+写入以下内容，并替换 API key：
+
+```text
+OPENAI_API_KEY=你的API_key
+OPENAI_MODEL=gpt-5-mini
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_TIMEOUT_MS=180000
+```
+
+保存后执行 `sudo chmod 600 /etc/psy-research-workbench.env && sudo systemctl daemon-reload && sudo systemctl restart psy-research-workbench`。API key 只存在服务器环境文件，不写入仓库和浏览器。
+
+如果服务器已经安装过旧版 service 文件，先在下一次部署完成后执行一次：
+
+```bash
+sudo install -o root -g root -m 644 /var/www/psy-tutorial/bin/psy-research-workbench.service /etc/systemd/system/psy-research-workbench.service
+sudo systemctl daemon-reload
+sudo systemctl restart psy-research-workbench
+```
+
 如果手动维护配置，至少需要保留静态站点规则并增加：
 
 ```nginx

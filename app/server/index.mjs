@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { mkdir, realpath, stat } from "node:fs/promises";
 import { createStorage } from "./storage.mjs";
-import { runIdeaRefiner, runPaperReview } from "./skill-runner.mjs";
+import { isModelConfigured, runIdeaRefiner, runPaperReview } from "./skill-runner.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(here, "..", "..");
@@ -78,6 +78,7 @@ function ideaMarkdown(idea) {
 export async function createServer({ dataRoot: root = dataRoot, runner = { runPaperReview, runIdeaRefiner } } = {}) {
   const storage = await createStorage(root);
   const tasks = new Map();
+  const defaultRunner = runner.runPaperReview === runPaperReview && runner.runIdeaRefiner === runIdeaRefiner;
 
   async function runPaper(uploadId, runId) {
     const upload = await storage.readUpload(uploadId);
@@ -95,7 +96,10 @@ export async function createServer({ dataRoot: root = dataRoot, runner = { runPa
     try {
       const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
       const pathname = url.pathname;
-      if (req.method === "GET" && pathname === "/api/health") return json(res, 200, { ok: true, service: "research-workbench" });
+      if (req.method === "GET" && pathname === "/api/health") {
+        const modelConfigured = !defaultRunner || isModelConfigured();
+        return json(res, modelConfigured ? 200 : 503, { ok: modelConfigured, service: "research-workbench", model_configured: modelConfigured });
+      }
       if (req.method === "GET" && pathname === "/api/library") return json(res, 200, { items: storage.listLibrary() });
       const runMatch = pathname.match(/^\/api\/runs\/([^/]+)$/);
       if (req.method === "GET" && runMatch) {
@@ -171,7 +175,7 @@ export async function createServer({ dataRoot: root = dataRoot, runner = { runPa
       }
       return fail(res, 404, "NOT_FOUND", "接口或资源不存在");
     } catch (error) {
-      const status = error.code === "PAYLOAD_TOO_LARGE" ? 413 : error.code === "INVALID_JSON" ? 400 : 500;
+      const status = error.code === "PAYLOAD_TOO_LARGE" ? 413 : error.code === "INVALID_JSON" ? 400 : error.status || 500;
       return fail(res, status, error.code || "INTERNAL_ERROR", error.message || "服务器错误");
     }
   });

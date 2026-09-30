@@ -62,10 +62,12 @@ jobs:
           RELEASE: ${{ github.sha }}
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "${ALIYUN_PORT}" "${ALIYUN_USER}@${ALIYUN_HOST}" "mkdir -p '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/site' '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/server' '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/web' '${ALIYUN_DEPLOY_ROOT}/bin'"
+          ssh -i ~/.ssh/deploy_key -p "${ALIYUN_PORT}" "${ALIYUN_USER}@${ALIYUN_HOST}" "mkdir -p '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/site' '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/server' '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/web' '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/skills' '${ALIYUN_DEPLOY_ROOT}/bin'"
           rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -p ${ALIYUN_PORT}" docs/.vitepress/dist/ "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/site/"
           rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -p ${ALIYUN_PORT}" app/server/ "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/server/"
           rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -p ${ALIYUN_PORT}" app/web/ "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/app/web/"
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -p ${ALIYUN_PORT}" skills/ "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/skills/"
           scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" package.json package-lock.json "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/"
           scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" ops/deploy/activate-release.sh "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh"
+          scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" ops/deploy/psy-research-workbench.service "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/bin/psy-research-workbench.service"
           ssh -i ~/.ssh/deploy_key -p "${ALIYUN_PORT}" "${ALIYUN_USER}@${ALIYUN_HOST}" "chmod 755 '${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh' && '${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh' '${ALIYUN_DEPLOY_ROOT}' '${RELEASE}' '${DEPLOY_HEALTHCHECK_URL}'"
