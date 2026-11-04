@@ -23,5 +23,5 @@ description: 文献精读、研究问题打磨与知识库
 - **研究问题**：从一个现象或困惑开始，记录构念、风险、证据状态和每次修订。
 
 ::: warning 使用前
-先在项目根目录配置 `OPENAI_API_KEY`，运行 `npm run server`，再打开上面的工作台地址。论文上传会调用真实模型并归档结构化报告；若未配置 key，健康接口会明确报告模型未配置。
+服务器默认使用 Qwen。部署环境配置 `LLM_PROVIDER=qwen` 和 `QWEN_API_KEY` 后，论文上传会调用真实模型并归档结构化报告；切换 DeepSeek 时改用 `LLM_PROVIDER=deepseek` 和 `DEEPSEEK_API_KEY`。若未配置对应 key，健康接口会明确报告模型未配置。
 :::

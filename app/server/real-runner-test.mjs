@@ -3,9 +3,9 @@ import { runIdeaRefiner, runPaperReview } from "./skill-runner.mjs";
 
 const calls = [];
 const fakeClient = {
-  async createResponse(request) {
+  async completeJson(request) {
     calls.push(request);
-    if (request.kind === "paper") {
+    if (request.user.includes("source_filename=trust-ai.pdf")) {
       return {
         schema_version: "1.0",
         document: { title_original: "Trust in AI", title_zh: "AI 信任", authors: [], year: null, journal: null, doi: null, page_count: 2 },
@@ -16,9 +16,9 @@ const fakeClient = {
       };
     }
     return {
-      schema_version: "1.0", idea_id: request.idea.id, revision: request.idea.revisions.length + 1,
+      schema_version: "1.0", idea_id: "idea-1", revision: 1,
       updated_at: new Date().toISOString(), skill: { name: "psych-idea-refiner", version: "3.0.0" }, stage: "constructs",
-      question: { one_sentence: request.userMessage, novelty_status: "not_assessed" }, evidence_claims: [], constructs: [], causal_model: {}, hypotheses: [], design: {}, open_science: {}, ethics: {}, contribution: {}, decisions: [], open_questions: ["核心构念是什么？"], risks: [], next_action: "定义构念",
+      question: { one_sentence: "我想研究人们为什么信任 AI", novelty_status: "not_assessed" }, evidence_claims: [], constructs: [], causal_model: {}, hypotheses: [], design: {}, open_science: {}, ethics: {}, contribution: {}, decisions: [], open_questions: ["核心构念是什么？"], risks: [], next_action: "定义构念",
       assistant: "请先定义核心构念。",
     };
   },
@@ -30,10 +30,9 @@ const report = await runPaperReview({
   client: fakeClient,
 });
 assert.equal(report.json.report_id, "run-1");
-assert.equal(report.json.skill.mode, "openai");
+assert.equal(report.json.skill.mode, "llm");
 assert.match(report.markdown, /AI 信任/);
-assert.equal(calls[0].kind, "paper");
-assert.equal(calls[0].upload.filename, "trust-ai.pdf");
+assert.match(calls[0].user, /source_filename=trust-ai.pdf/);
 
 const idea = await runIdeaRefiner({
   idea: { id: "idea-1", revisions: [], state: { stage: "framing", question: {}, constructs: [] } },
@@ -43,6 +42,6 @@ const idea = await runIdeaRefiner({
 assert.equal(idea.state.schema_version, "1.0");
 assert.equal(idea.state.question.one_sentence, "我想研究人们为什么信任 AI");
 assert.equal(idea.assistant, "请先定义核心构念。");
-assert.equal(calls[1].kind, "idea");
+assert.match(calls[1].user, /信任 AI/);
 
 console.log("real skill runner contract test passed");

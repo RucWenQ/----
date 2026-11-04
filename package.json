@@ -11,11 +11,14 @@
     "clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist",
     "server": "node app/server/index.mjs",
     "server:dev": "node --watch app/server/index.mjs",
-    "test:workbench": "node app/server/smoke-test.mjs"
+    "test:workbench": "node app/server/smoke-test.mjs && node app/server/provider-test.mjs"
   },
   "devDependencies": {
+    "markdown-it-mathjax3": "^4.3.2",
     "vitepress": "^1.6.0",
-    "vue": "^3.5.0",
-    "markdown-it-mathjax3": "^4.3.2"
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "pdf-parse": "^2.4.5"
   }
 }

@@ -36,13 +36,15 @@ sudoedit /etc/psy-research-workbench.env
 写入以下内容，并替换 API key：
 
 ```text
-OPENAI_API_KEY=你的API_key
-OPENAI_MODEL=gpt-5-mini
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_TIMEOUT_MS=180000
+LLM_PROVIDER=qwen
+QWEN_API_KEY=你的通义千问API_key
+DEEPSEEK_API_KEY=可选的DeepSeek_API_key
+LLM_MODEL=qwen-plus
+LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+LLM_TIMEOUT_MS=180000
 ```
 
-保存后执行 `sudo chmod 600 /etc/psy-research-workbench.env && sudo systemctl daemon-reload && sudo systemctl restart psy-research-workbench`。API key 只存在服务器环境文件，不写入仓库和浏览器。
+保存后执行 `sudo chmod 600 /etc/psy-research-workbench.env && sudo systemctl daemon-reload && sudo systemctl restart psy-research-workbench`。API key 只存在服务器环境文件，不写入仓库和浏览器。切换 DeepSeek 时改为 `LLM_PROVIDER=deepseek`、`LLM_MODEL=deepseek-chat`、`LLM_BASE_URL=https://api.deepseek.com/v1`，并确保 `DEEPSEEK_API_KEY` 已填写。
 
 如果服务器已经安装过旧版 service 文件，先在下一次部署完成后执行一次：
 
