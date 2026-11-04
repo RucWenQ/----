@@ -70,4 +70,5 @@ jobs:
           scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" package.json package-lock.json "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}/"
           scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" ops/deploy/activate-release.sh "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh"
           scp -q -i ~/.ssh/deploy_key -P "${ALIYUN_PORT}" ops/deploy/psy-research-workbench.service "${ALIYUN_USER}@${ALIYUN_HOST}:${ALIYUN_DEPLOY_ROOT}/bin/psy-research-workbench.service"
+          ssh -i ~/.ssh/deploy_key -p "${ALIYUN_PORT}" "${ALIYUN_USER}@${ALIYUN_HOST}" "cd '${ALIYUN_DEPLOY_ROOT}/releases/${RELEASE}' && /usr/bin/npm ci --omit=dev --ignore-scripts --no-audit --no-fund"
           ssh -i ~/.ssh/deploy_key -p "${ALIYUN_PORT}" "${ALIYUN_USER}@${ALIYUN_HOST}" "chmod 755 '${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh' && '${ALIYUN_DEPLOY_ROOT}/bin/activate-release.sh' '${ALIYUN_DEPLOY_ROOT}' '${RELEASE}' '${DEPLOY_HEALTHCHECK_URL}'"
