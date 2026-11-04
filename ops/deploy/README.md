@@ -27,6 +27,8 @@ psy-tutorial ALL=(root) NOPASSWD: /usr/bin/systemctl restart psy-research-workbe
 
 `nginx-site.conf` 是当前 IP 站点的完整 Nginx 配置。首次部署激活并确认工作台本机健康后，备份服务器现有 `/etc/nginx/sites-available/ocb`，再安装该文件并执行 `sudo nginx -t && sudo systemctl reload nginx`。它把静态根目录指向 `/var/www/psy-tutorial/current/site`，并将 `/research/` 与 `/api/` 转发给工作台。若服务器已有其他自定义规则，先合并而非直接覆盖。
 
+域名 `mdwx.com.cn` 使用阿里云 DNS 时，先添加 `@` 的 A 记录到 `39.97.57.57`，再添加 `www` 的 CNAME 到 `mdwx.com.cn`。DNS 生效后安装配置并检查 `http://mdwx.com.cn/research/`；需要 HTTPS 时在 ECS 执行 `sudo apt-get update && sudo apt-get install -y certbot python3-certbot-nginx`，再执行 `sudo certbot --nginx -d mdwx.com.cn -d www.mdwx.com.cn`。
+
 在服务器创建模型环境文件并限制权限：
 
 ```bash
