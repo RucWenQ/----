@@ -11,8 +11,8 @@ description: 文献精读、研究问题打磨与知识库
   <div>
     <span class="research-kicker">RESEARCH STUDIO</span>
     <h2>进入研究工作台</h2>
-    <p>工作台服务需要单独启动，默认地址是 <code>http://127.0.0.1:4174/research/</code>。</p>
-    <a class="research-button" href="http://127.0.0.1:4174/research/" target="_blank" rel="noreferrer">打开工作台 ↗</a>
+    <p>工作台运行在服务器上，直接打开即可使用，无需在本地启动服务。</p>
+    <a class="research-button" href="https://mdwx.com.cn/research/" target="_self">打开工作台 →</a>
   </div>
   <div class="research-scope"><strong>当前版本</strong><span>真实模型工作台</span><small>报告和研究想法保存在服务端 data/ 目录。模型由服务端环境变量配置。</small></div>
 </div>

@@ -73,7 +73,8 @@ export default defineConfig({
         ],
       },
       { text: "附录", link: "/appendix/" },
-      { text: "研究工作台", link: "/research/" },
+      // 工作台由独立服务提供，显式 target 让浏览器跳转，避免文档路由接管。
+      { text: "研究工作台", link: "https://mdwx.com.cn/research/", target: "_self" },
     ],
 
     // 侧边栏（从单独文件导入，便于维护）
