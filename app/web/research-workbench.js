@@ -3,7 +3,14 @@ const state = { currentIdea: null, pollTimer: null };
 
 function escapeHtml(value = "") { return String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]); }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString("zh-CN") : ""; }
-async function request(url, options) { const response = await fetch(url, options); const payload = await response.json(); if (!response.ok) throw new Error(payload.error?.message || "请求失败"); return payload; }
+async function request(url, options) {
+  const response = await fetch(url, options);
+  let payload;
+  try { payload = JSON.parse(await response.text()); } catch { /* 代理错误可能返回 HTML。 */ }
+  if (!response.ok) throw new Error(payload?.error?.message || (response.status === 413 ? "文件过大，请选择不超过 25 MB 的 PDF" : `请求失败（HTTP ${response.status}），请稍后重试`));
+  if (!payload) throw new Error("服务器返回了无法读取的响应，请稍后重试");
+  return payload;
+}
 
 function switchView(name) { document.querySelectorAll(".mode-tab").forEach((button) => button.classList.toggle("active", button.dataset.view === name)); document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === `${name}View`)); if (name === "library") loadLibrary(); }
 document.querySelectorAll(".mode-tab").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
@@ -11,9 +18,50 @@ document.querySelectorAll(".mode-tab").forEach((button) => button.addEventListen
 async function checkHealth() { try { await request("/api/health"); $("#serviceStatus").textContent = "服务已连接"; $(".status-dot").classList.add("online"); } catch { $("#serviceStatus").textContent = "服务未连接"; } }
 
 function renderRun(run) { const panel = $("#runPanel"); panel.classList.remove("hidden"); const complete = run.status === "completed"; const failed = run.status === "failed"; const percent = complete ? 100 : failed ? 100 : run.status === "processing" ? 62 : 25; panel.innerHTML = `<div class="run-top"><strong>${complete ? "报告已归档" : failed ? "处理失败" : "正在处理论文"}</strong><span class="run-status">${escapeHtml(run.stage || "queued")}</span></div><div class="run-track"><span style="width:${percent}%"></span></div><div class="run-stages"><span class="${percent >= 25 ? "active" : ""}">文件检查</span><span class="${percent >= 62 ? "active" : ""}">skill runner</span><span class="${complete ? "active" : ""}">归档</span></div>${run.error ? `<p class="placeholder-copy">${escapeHtml(run.error)}</p>` : ""}`; if (complete) loadReport(run.reportId); }
-async function pollRun(runId) { const run = await request(`/api/runs/${runId}`); renderRun(run); if (!["completed", "failed"].includes(run.status)) state.pollTimer = setTimeout(() => pollRun(runId), 700); }
+async function pollRun(runId) {
+  try {
+    const run = await request(`/api/runs/${runId}`);
+    renderRun(run);
+    if (!["completed", "failed"].includes(run.status)) state.pollTimer = setTimeout(() => pollRun(runId), 700);
+  } catch (error) { renderRun({ status: "failed", stage: "status", error: `读取处理进度失败：${error.message}` }); }
+}
 async function loadReport(reportId) { const report = await request(`/api/reports/${reportId}/download?format=json`).catch(() => null); if (!report) return; $("#reportPanel").classList.remove("hidden"); $("#reportPanel").innerHTML = `<p class="eyebrow">ARCHIVED REPORT</p><h3>${escapeHtml(report.document?.title_zh || report.document?.title_original || "论文报告")}</h3><p>${escapeHtml(report.summary?.research_question || "报告已生成")}</p><div class="report-meta">${(report.tags || []).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}<span class="tag">${escapeHtml(report.processing?.status || "unknown")}</span></div><div class="download-row"><a class="ghost-button" href="/api/reports/${report.report_id}/download?format=md">下载 Markdown</a><a class="ghost-button" href="/api/reports/${report.report_id}/download?format=json">下载 JSON</a></div>`; }
-$("#uploadForm").addEventListener("submit", async (event) => { event.preventDefault(); const file = $("#paperFile").files[0]; if (!file) return; const form = new FormData(); form.append("paper", file); try { const result = await request("/api/uploads", { method: "POST", body: form }); renderRun({ status: "queued", stage: "uploaded" }); pollRun(result.runId); } catch (error) { renderRun({ status: "failed", stage: "upload", error: error.message }); } });
+const paperFile = $("#paperFile");
+const uploadButton = $("#uploadForm button[type=submit]");
+paperFile.addEventListener("change", () => {
+  const file = paperFile.files[0];
+  $("#paperFileStatus").textContent = file ? `已选择：${file.name}（${(file.size / 1024 / 1024).toFixed(2)} MB）` : "尚未选择文件";
+  uploadButton.disabled = !file;
+});
+$("#uploadForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const file = paperFile.files[0];
+  if (!file || uploadButton.disabled) return;
+  if (!file.name.toLowerCase().endsWith(".pdf") || file.size > 25 * 1024 * 1024) {
+    renderRun({ status: "failed", stage: "upload", error: "请选择不超过 25 MB 的 PDF 文件" });
+    return;
+  }
+  clearTimeout(state.pollTimer);
+  $("#reportPanel").classList.add("hidden");
+  uploadButton.disabled = true;
+  paperFile.disabled = true;
+  uploadButton.textContent = "正在上传…";
+  $("#uploadForm").setAttribute("aria-busy", "true");
+  renderRun({ status: "queued", stage: "uploading" });
+  const form = new FormData();
+  form.append("paper", file);
+  try {
+    const result = await request("/api/uploads", { method: "POST", body: form });
+    renderRun({ status: "queued", stage: "uploaded" });
+    await pollRun(result.runId);
+  } catch (error) { renderRun({ status: "failed", stage: "upload", error: error.message }); }
+  finally {
+    uploadButton.disabled = false;
+    paperFile.disabled = false;
+    uploadButton.textContent = "开始精读";
+    $("#uploadForm").setAttribute("aria-busy", "false");
+  }
+});
 
 function renderSpec(idea) { const stateData = idea.state || {}; $("#ideaStage").textContent = String(stateData.stage || "framing").toUpperCase(); const question = stateData.question?.one_sentence || "待明确"; $("#specContent").innerHTML = `<div class="spec-block"><div class="spec-label">一句话问题</div><div class="spec-value">${escapeHtml(question)}</div></div><div class="spec-block"><div class="spec-label">证据状态</div><div class="spec-value">${escapeHtml(stateData.question?.novelty_status || "not_assessed")}</div></div><div class="spec-block"><div class="spec-label">当前风险</div><div class="spec-value">${escapeHtml((stateData.risks || ["暂无"]).join("；"))}</div></div><div class="spec-block"><div class="spec-label">下一步</div><div class="spec-value">${escapeHtml(stateData.next_action || "待定")}</div></div>`; $("#revisionList").innerHTML = (idea.revisions || []).slice(0, 6).map((revision) => `<div class="revision-item"><strong>Revision ${revision.revision}</strong><span>${formatDate(revision.createdAt)}</span></div>`).join("") || `<p class="placeholder-copy">还没有 revision。</p>`; $("#exportIdeaButton").disabled = false; }
 function renderConversation(idea) { const conversation = $("#conversation"); conversation.classList.remove("empty-conversation"); conversation.innerHTML = (idea.messages || []).map((message) => `<div class="message ${message.role}">${escapeHtml(message.content)}<span class="message-time">${message.role === "user" ? "你" : "研究工作台"} · ${formatDate(message.createdAt)}</span></div>`).join("") || `<div class="empty-state"><h3>从一个问题开始</h3></div>`; conversation.scrollTop = conversation.scrollHeight; $("#ideaMessage").disabled = false; $("#ideaForm button").disabled = false; renderSpec(idea); }

@@ -34,10 +34,13 @@
             <div class="primary-column">
               <div class="section-heading"><div><p class="eyebrow">PAPER REVIEW</p><h2>上传一篇心理学论文</h2></div><span class="quiet-label">PDF / 25 MB</span></div>
               <form id="uploadForm" class="upload-zone">
-                <input id="paperFile" type="file" accept="application/pdf,.pdf" required />
-                <div class="upload-icon">↑</div>
-                <div><strong>选择 PDF 文件</strong><p>论文会进入解析、精读、归档流程。</p></div>
-                <button type="submit" class="primary-button">开始精读</button>
+                <label class="upload-picker">
+                  <input id="paperFile" type="file" accept="application/pdf,.pdf" aria-describedby="paperFileStatus" required />
+                  <span class="upload-icon" aria-hidden="true">↑</span>
+                  <span><strong>选择 PDF 文件</strong><span class="upload-hint">论文会进入解析、精读、归档流程。</span></span>
+                </label>
+                <p id="paperFileStatus" class="selected-file" role="status">尚未选择文件</p>
+                <button type="submit" class="primary-button" disabled>开始精读</button>
               </form>
               <div id="runPanel" class="run-panel hidden"></div>
               <article id="reportPanel" class="report-panel hidden"></article>
